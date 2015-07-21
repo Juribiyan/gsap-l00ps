@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>TLL CSS test</title>
+	<link rel="stylesheet" href="style.css"></head>
+	<link rel="stylesheet" href="font.css"></head>
+	<script src="lodash.js"></script>
+	<script src="jquery.min.js"></script>
+	<script src="tinycolor.js"></script>
+	<script src="TweenMax.min.js"></script>
+	<script src="jscolor/jscolor.js"></script>
+	<script src="tllcss.js"></script>
+</head>
+<body>
+	<div class="wrapper wrapper-decor wrapper-xh" id="bars-wrap">
+		<canvas id="bars" height="240" width="850"></canvas>
+	</div>
+	<div class="wrapper wrapper-decor wrapper-xh" id="shadow-wrap">
+		<div id="shadow"></div>
+	</div>
+	<div class="wrapper" id="grid-wrap">
+		<div id="nullgrid">
+			<div class="triangle-group tg-top">
+				<div class="triangle t-up"></div>
+				<div class="triangle t-down"></div>
+			</div><br>
+			<div class="triangle-group tg-left">
+				<div class="triangle t-right"></div><br>
+				<div class="triangle t-left"></div>
+			</div>
+			<div id="cells">
+				<div id="overlays"></div>
+				<div id="sizeIndicator">88×88</div>
+			</div>
+			<div class="triangle-group tg-right">
+				<div class="triangle t-right"></div><br>
+				<div class="triangle t-left"></div>
+			</div><br>
+			<div class="triangle-group tg-bottom">
+				<div class="triangle t-up"></div>
+				<div class="triangle t-down"></div>
+			</div>
+		</div>
+	</div>
+	<div class="wrapper wrapper-xh" id="clicker-wrap">
+		<div id="controls">
+			<a href="#" onclick="Grid.enterPaintMode()" class="panel-opener">Редактировать</a>
+			<a href="#" id="playSwitcher">Loading...</a>
+			<a href="#" onclick="$('#nerdmode').slideToggle('fast')" class="panel-opener">Настройка</a>
+		</div>
+	</div>
+	
+	<div class="panel-wrap" id="editmode">
+		<div class="panel">
+			<div class="p-block">
+				<button title="Получить паттерн" class="text-button action-button" data-act="export"><i class="i-dn"></i><span>Экспорт</span></button>
+				<button title="Нарисовать паттерн" class="text-button action-button" data-act="import"><i class="i-up"></i><span>Импорт</span></button>
+				<br>
+				<div class="textarea-wrap p-block">
+					<textarea id="pattern-area" cols="30" rows="10"></textarea>
+				</div>
+			</div>
+			<div class="p-block">
+				<div class="p-block">
+					<button title="Рисование" class="tool" data-tool="draw"><i class="i-draw"></i></button>
+					<button title="Ластик" class="tool" data-tool="eraser"><i class="i-eraser"></i></button>
+					<button title="Пипетка" class="tool" data-tool="dropper"><i class="i-dropper"></i></button>
+					<br>
+					<input id="colorpicker" class="color swatch">
+				</div>
+				<div class="p-block" id="fixed-palette">
+					<div class="swatch" data-c="G"></div>
+					<div class="swatch" data-c="J"></div>
+					<div class="swatch" data-c="Y"></div>
+					<div class="swatch" data-c="O"></div>
+					<div class="swatch" data-c="B"></div>
+					<div class="swatch" data-c="C"></div>
+					<div class="swatch" data-c="V"></div>
+					<div class="swatch" data-c="M"></div>
+					<br>
+					<div class="swatch" data-c="g"></div>
+					<div class="swatch" data-c="j"></div>
+					<div class="swatch" data-c="y"></div>
+					<div class="swatch" data-c="o"></div>
+					<div class="swatch" data-c="b"></div>
+					<div class="swatch" data-c="c"></div>
+					<div class="swatch" data-c="v"></div>
+					<div class="swatch" data-c="m"></div>
+				</div>
+				<div class="p-block">
+					<button class="action-button" title="Очистить поле" data-act="clear"><i class="i-clear"></i></button>
+					<button class="action-button" title="Закрыть" data-act="close"><i class="i-close"></i></button>
+					<br>
+					<button class="action-button" title="Залить рандомом" data-act="random"><i class="i-random"></i></button>
+					<button class="action-button" title="Вернуть дефолтный паттерн" data-act="revert"><i class="i-revert"></i></button>
+				</div>
+				<br>
+				<div class="p-block dp-wrap"><div class="p-block" id="dynamic-palette"></div></div>
+			</div><br>
+		</div>
+	</div>
+	
+	<div class="panel-wrap" id="nerdmode">
+		<div class="panel">
+			<div class="nm-block p-block" title="ХУЙ ПИЗДА ДЖИГУРДА">
+				<label for="treshold">Порог срабатывания (<span class="indicator"></span>)</label><br>
+				<input type="range" name="treshold" min="0.5" max="1" step="0.01">
+			</div>
+			<div class="nm-block p-block">
+				<label for="flashProbability">Вероятность срабатывания (<span class="indicator"></span>)</label><br>
+				<input type="range" name="flashProbability" min="0" max="1" step="0.01">
+			</div>
+			<br>
+			<div class="nm-block p-block">
+				<label for="flashFuzziness">Степень рассеивания (<span class="indicator"></span>)</label><br>
+				<input type="range" name="flashFuzziness" min="0" max="1" step="0.01">
+			</div>
+			<div class="nm-block p-block">
+				<label for="fft_size">Размер БПФ (<span class="indicator"></span>)</label><br>
+				<input type="range" name="fft_size" min="5" max="15" step="1">
+			</div>
+			<br>
+			<div class="nm-block p-block">
+				<span>Область анализа</span><br>
+				<input type="radio" name="domain" value="time" id="rb-time"><label for="rb-time">Временная</label>
+				<input type="radio" name="domain" value="freq" id="rb-freq"><label for="rb-freq">Частотная</label>
+			</div>
+			<div class="nm-block p-block" id="smoothingBlock">
+				<label for="smoothing">Степень сглаживания (<span class="indicator"></span>)</label><br>
+				<input type="range" name="smoothing" min="0" max="1" step="0.01">
+			</div>
+		</div>
+	</div>
+
+	<div id="content">
+	</div>
+	
+	<script>
+	$('document').ready(readyset)
+	</script>
+</body>
+</html>
