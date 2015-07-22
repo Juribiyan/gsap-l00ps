@@ -216,6 +216,7 @@ var Colors = {
 	'.': '_VOID_', '_': '_VOID_'
 }
 var colorMatch = new RegExp('(['+_.escapeRegExp(_.keys(Colors).join(''))+'])|\\[(.+?)\\]', 'g');
+var colorMatchSqBr = new RegExp('(['+_.escapeRegExp(_.keys(Colors).join(''))+'])|(\\[.+?\\])', 'g');
 
 var styles = {
 	legacy: function(color) {
@@ -415,7 +416,7 @@ var Grid = {
 			var _remove = _.includes(['left', 'top'], direction) ? _.drop : _.dropRight;
 			if(_.includes(['left', 'right'], direction)) 
 				output = _.map(lines, function(line) { 
-					var chars = _.compact(line.split(colorMatch));
+					var chars = _.compact(line.split(colorMatchSqBr));
 					return _remove(chars, (-amount)).join('') 
 				});
 			else 
