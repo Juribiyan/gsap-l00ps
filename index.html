@@ -54,8 +54,10 @@
 	<div class="panel-wrap" id="editmode">
 		<div class="panel">
 			<div class="p-block">
-				<button title="Получить паттерн" class="text-button action-button" data-act="export"><i class="i-dn"></i><span>Экспорт</span></button>
-				<button title="Нарисовать паттерн" class="text-button action-button" data-act="import"><i class="i-up"></i><span>Импорт</span></button>
+				<button title="Экспортировать паттерн" class="text-button action-button" data-act="export"><i class="i-totext"></i></button>
+				<button title="Сохранить как картинку" class="text-button action-button" data-act="download"><i class="i-download"></i></button>
+				<button title="Нарисовать паттерн" class="text-button action-button" data-act="import"><i class="i-fromtext"></i></button>
+				<button title="Импортировать картинку" class="text-button action-button" data-act="upload"><i class="i-upload"></i><input type="file" id="bufferFileInput" style="display:none" /></button>
 				<br>
 				<div class="textarea-wrap p-block">
 					<textarea id="pattern-area" cols="30" rows="10"></textarea>
@@ -132,6 +134,8 @@
 			</div>
 		</div>
 	</div>
+	<canvas id="bufferCanvas" style="display:none"></canvas>
+	<a href="#" id="bufferLink" style="display:none" download="pattern.png"></a>
 
 	<div id="content">
 	</div>

@@ -1,10 +1,10 @@
 @font-face {
 	font-family: 'instant-palette';
-	src:url('fonts/instant-palette.eot?-bzikyb');
-	src:url('fonts/instant-palette.eot?#iefix-bzikyb') format('embedded-opentype'),
-		url('fonts/instant-palette.ttf?-bzikyb') format('truetype'),
-		url('fonts/instant-palette.woff?-bzikyb') format('woff'),
-		url('fonts/instant-palette.svg?-bzikyb#instant-palette') format('svg');
+	src:url('fonts/instant-palette.eot?-eblwxp');
+	src:url('fonts/instant-palette.eot?#iefix-eblwxp') format('embedded-opentype'),
+		url('fonts/instant-palette.ttf?-eblwxp') format('truetype'),
+		url('fonts/instant-palette.woff?-eblwxp') format('woff'),
+		url('fonts/instant-palette.svg?-eblwxp#instant-palette') format('svg');
 	font-weight: normal;
 	font-style: normal;
 }
@@ -23,6 +23,18 @@ i {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+.i-fromtext:before {
+	content: "\e600";
+}
+.i-totext:before {
+	content: "\e604";
+}
+.i-upload:before {
+	content: "\e60a";
+}
+.i-download:before {
+	content: "\e60b";
+}
 .i-revert:before {
 	content: "\e609";
 }
@@ -32,14 +44,8 @@ i {
 .i-clear:before {
 	content: "\e605";
 }
-.i-accept:before {
-	content: "\e606";
-}
 .i-close:before {
 	content: "\e607";
-}
-.i-dn:before {
-	content: "\e600";
 }
 .i-draw:before {
 	content: "\e601";
@@ -49,7 +55,4 @@ i {
 }
 .i-eraser:before {
 	content: "\e603";
-}
-.i-up:before {
-	content: "\e604";
 }

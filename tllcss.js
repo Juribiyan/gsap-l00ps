@@ -65,6 +65,9 @@ var fileFormat = (function() {
 function readyset() {
 	$canvas = $('#bars');
 	drawContext = $canvas[0].getContext('2d');
+
+	bufferCanvas = $('#bufferCanvas')[0];
+	bufferContext = bufferCanvas.getContext('2d');
 	
 	Grid.init('#nullgrid');
 	var pattern = localStorage['customPattern'] || defaultPattern;
@@ -173,8 +176,11 @@ function readyset() {
 	$('#enterNerdmode').click(function() {
 		$('#nerdmode').slideToggle('fast');
 	})
-		
-	//Grid.enterPaintMode() //remove this
+
+	document.querySelector('#nullgrid').addEventListener('dragover', handleDragOver, false);
+	document.querySelector('#nullgrid').addEventListener('drop', handleFileDrop, false);
+
+	document.querySelector('#bufferFileInput').addEventListener('change', handleFileInput, false);
 }
 
 var $canvas, drawContext;
@@ -197,6 +203,12 @@ var actions = {
 	},
 	close: function() {
 		Grid.exitPaintMode()
+	},
+	upload: function() {
+		document.getElementById('bufferFileInput').click();
+	},
+	download: function() {
+		Grid.toCanvas()
 	}
 }
 
@@ -241,11 +253,6 @@ var Grid = {
 		this.$el = $(sel);
 		var self = this;
 		this.$el.find('.triangle-group').css({display: 'inline-block'}).hide();
-		/*this.$el.find('.triangle-group').on('mouseenter', function() {
-			$('#sizeIndicator').fadeIn()
-		}).on('mouseleave', function() {
-			$('#sizeIndicator').fadeOut()
-		});*/
 		this.$el.find('.tg-top .t-up').click(function() {self.resample('top', 1, 'under')});
 		this.$el.find('.tg-top .t-down').click(function() {self.resample('top', -1, 'under')});
 		this.$el.find('.tg-bottom .t-up').click(function() {self.resample('bottom', -1, 'under')});
@@ -260,7 +267,7 @@ var Grid = {
 		var char = color.split(/[\[\]]/)[1] || color.split(/[\[\]]/)[0],
 		color = _.has(Colors, char) ? tinycolor(Colors[char]) : tinycolor(char)
 		var style = styles[styles.chosen](color);
-		if(color._format) {
+		if(color._format && color._a >= conf.colorAlphaTreshold) {
 			if(layer == 'under')
 				return $('<div data-c="'+char+'" class="cell under" style="'+style.u+'"></div>');
 			else {
@@ -449,6 +456,41 @@ var Grid = {
 			var id = $(this).attr('id');
 			$(this).replaceWith(Grid.generateCell('_', 'under').attr('id', id));
 		});
+	},
+	fromCanvas: function() {
+		var h = bufferCanvas.height, w = bufferCanvas.width;
+		var x, y, px, output = "";
+		for(y=0; y < h; y++) {
+			for(x=0; x < w; x++) {
+				px = bufferContext.getImageData(x, y, 1, 1).data;
+				output += '[rgba(' + px[0] + ',' + px[1] + ',' + px[2] + ',' + px[3] + ')]';
+			}
+			if(y != (h-1)) output += '|';
+		}
+		this.build(output)
+	},
+	toCanvas: function() {
+		bufferCanvas.width = this.width;
+		bufferCanvas.height = this.height;
+		var pattern = this.getPattern();
+		var output = new Uint8ClampedArray(this.width * this.height * 4);
+		var i=0, j;
+		var lines = pattern.split(/[|\/]/);
+		_.each(lines, function(line, li) {
+			var chars = _.compact(line.split(colorMatch));
+			_.each(chars, function(char, ci) {
+				var color = _.has(Colors, char) ? tinycolor((Colors[char] == "_VOID_") ? 'rgba(0,0,0,0)': Colors[char]) : tinycolor(char.replace(/[\[\]]/g, ''));
+				j = i*4;
+				output[j] = color._r;
+				output[j+1] = color._g;
+				output[j+2] = color._b;
+				output[j+3] = color._a*255;
+				i++;
+			})
+		})
+		bufferContext.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height);
+		bufferContext.putImageData(new ImageData(output, this.width, this.height), 0, 0);
+		$('#bufferLink').attr('href', bufferCanvas.toDataURL('image/png'))[0].click();
 	}
 };
 
@@ -624,7 +666,8 @@ var conf = {
 	tresholdCorrection: 0,
 	domain: 'time',
 	flashProbability: 0.3,
-	flashFuzziness: 0.35
+	flashFuzziness: 0.35,
+	colorAlphaTreshold: 0.5
 };
 
 
@@ -716,4 +759,59 @@ function Rarity(trim) {
 		}
 		else this.n++;
 	}
+}
+
+function handleFileDrop(evt) {
+	handleFile(evt, "drop");
+}
+function handleFileInput(evt) {
+	handleFile(evt, "input");
+}
+
+function handleFile(evt, type) {
+	evt.stopPropagation();
+	evt.preventDefault();
+
+  var files = (type == "drop") ? evt.dataTransfer.files : evt.target.files;
+  var f = files[0];
+
+  if (!f.type.match('image.*')) return false
+
+  var reader = new FileReader();
+	
+  reader.onload = (function(theFile) {
+    return function(e) {
+      var dataUrl = e.target.result;
+      toCanvas(dataUrl)
+    };
+  })(f);
+
+  reader.readAsDataURL(f);
+  return false
+}
+function handleDragOver(evt) {
+  evt.stopPropagation();
+  evt.preventDefault();
+  evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+function toCanvas(dataURL) {
+
+  // load image from data url
+  var imageObj = new Image();
+  imageObj.onload = function() {
+  	bufferCanvas.height = this.height;
+  	bufferCanvas.width = this.width;
+    bufferContext.drawImage(this, 0, 0);
+    Grid.fromCanvas();
+  };
+
+  imageObj.src = dataURL;
+}
+
+function downloadURI(uri, name) 
+{
+  var link = document.createElement("a");
+  link.download = name;
+  link.href = uri;
+  link.click();
 }
