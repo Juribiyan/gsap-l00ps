@@ -181,6 +181,14 @@ function readyset() {
 	document.querySelector('#nullgrid').addEventListener('drop', handleFileDrop, false);
 
 	document.querySelector('#bufferFileInput').addEventListener('change', handleFileInput, false);
+
+	document.querySelector('#overlays').addEventListener('touchmove', function(ev) {
+		_.each(ev.targetTouches, function(touch) {
+			var el = document.elementFromPoint(touch.pageX, touch.pageY);
+			if(el.hasOwnProperty('_tl'))
+				el._tl.progress(0)
+		})
+	}, false)
 }
 
 var $canvas, drawContext;
@@ -273,9 +281,11 @@ var Grid = {
 			else {
 				var $cell = $('<div data-c="'+char+'" class="cell over" style="'+style.o+'"></div>');
 				$cell[0]._tl = new TimelineLite()
-				$cell[0].onmouseenter = function() {
+				var blink = function() {
 					this._tl.progress(0)
 				}
+				$cell[0].addEventListener('mouseenter', blink, false);
+				$cell[0].addEventListener('touchstart', blink, false);
 				return $cell;
 			}
 		}
