@@ -29,6 +29,7 @@ body {
 }
 #overlays {
 	position: absolute;
+	left: 0;
 }
 #nullgrid {
 	text-align: center;
