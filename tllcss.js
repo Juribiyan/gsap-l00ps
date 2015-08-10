@@ -60,7 +60,7 @@ var loops = [
 	{fileName: 'summer_of_haze_anthem_of_haze' },
 	{fileName: 'tv_on_the_radio_DLZ', tresholdCorrection: -0.08 },
 	{fileName: 'bionic_commando_rusko_rmx', tresholdCorrection: 0.05 },
-	/*{fileName: '' },*/
+	{fileName: 'pokemon_lavender_town_cyberoptics_rmx' },
 	/*{fileName: '' },*/
 	/*{fileName: '' },*/
 ];
