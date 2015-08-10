@@ -1,23 +1,3 @@
-var defaultPattern = 
-'..JJJJJJJJ../'+
-'.JJJJJJJJJJ./'+
-'JJjjjjjjjJJJ/'+
-'JJjjjjjjJJJJ/'+
-'JJjjjjjJJjJJ/'+
-'JJjjjjjJJjJJ/'+
-'JJjjjjJJjjJJ/'+
-'JJjjjjJJjjJJ/'+
-'JJjjjJJjjjJJ/'+
-'JJjjjJJjjjJJ/'+
-'JJjjJJjjjjJJ/'+
-'JJjjJJjjjjJJ/'+
-'JJjJJjjjjjJJ/'+
-'JJjJJjjjjjJJ/'+
-'JJJJjjjjjjJJ/'+
-'JJJjjjjjjjJJ/'+
-'.JJJJJJJJJJ./'+
-'..JJJJJJJJ..'; 
-
 var customPatterns = {
 	nightnull: "__[#00ffff][#00ffff][#00ffff][#00ffff][#00ffff][#00ffff][#00ffff][#00ffff]__|_[#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd][#09f4fd]_|[#13eafd][#13eafd][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#13eafd][#13eafd][#13eafd]|[#1de1fd][#1de1fd][#152D47][#152D47][#152D47][#152D47][#152D47][#152D47][#1de1fd][#1de1fd][#1de1fd][#1de1fd]|[#27d7fd][#27d7fd][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#27d7fd][#27d7fd][#1E4166][#27d7fd][#27d7fd]|[#31cefd][#31cefd][#152D47][#152D47][#152D47][#152D47][#152D47][#31cefd][#31cefd][#152D47][#31cefd][#31cefd]|[#3bc4fd][#3bc4fd][#1E4166][#1E4166][#1E4166][#1E4166][#3bc4fd][#3bc4fd][#1E4166][#1E4166][#3bc4fd][#3bc4fd]|[#45bafd][#45bafd][#152D47][#152D47][#152D47][#152D47][#45bafd][#45bafd][#152D47][#152D47][#45bafd][#45bafd]|[#4fb1fd][#4fb1fd][#1E4166][#1E4166][#1E4166][#4fb1fd][#4fb1fd][#1E4166][#1E4166][#1E4166][#4fb1fd][#4fb1fd]|[#59a7fd][#59a7fd][#152D47][#152D47][#152D47][#59a7fd][#59a7fd][#152D47][#152D47][#152D47][#59a7fd][#59a7fd]|[#639efd][#639efd][#1E4166][#1E4166][#639efd][#639efd][#1E4166][#1E4166][#1E4166][#1E4166][#639efd][#639efd]|[#6d94fd][#6d94fd][#152D47][#152D47][#6d94fd][#6d94fd][#152D47][#152D47][#152D47][#152D47][#6d94fd][#6d94fd]|[#778afd][#778afd][#1E4166][#778afd][#778afd][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#778afd][#778afd]|[#8181fd][#8181fd][#152D47][#8181fd][#8181fd][#152D47][#152D47][#152D47][#152D47][#152D47][#8181fd][#8181fd]|[#8b77fd][#8b77fd][#8b77fd][#8b77fd][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#1E4166][#8b77fd][#8b77fd]|[#956efd][#956efd][#956efd][#152D47][#152D47][#152D47][#152D47][#152D47][#152D47][#152D47][#956efd][#956efd]|_[#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD][#9f64FD]_|__[#ab5cff][#ab5cff][#ab5cff][#ab5cff][#ab5cff][#ab5cff][#ab5cff][#ab5cff]__",
 	ivy: "_____________G______________|_____________G______________|____________GgG_____________|____________GgG_____________|____________GgG_____________|____________GgG_____________|___________GgggG____________|___________GgggG____________|___________GgggG____________|__________GgggggG___________|G_________GgggggG_________G_|GG________GgggggG________GG_|_GG______GgggggggG______GG__|_GgGG____GgggggggG____GGgG__|_GgggG___GgggggggG___GgggG__|_GggggG__GgggggggG__GggggG__|__GggggGGgggggggggGGggggG___|__GgggggGGgggggggGGgggggG___|__GgggggGgGgggggGgGgggggG___|___GgggGgggGgggGgggGgggG____|___GgggGggggGgGggggGgggG____|___GgggGggggGGGggggGgggG____|___GggGggggG___GggggGggG____|____GgGgggG_____GgggGgG_____|____GgGggG_______GggGgG_____|____GgGGG_________GGGgG_____|_____GG_____________GG______|_____G_______________G______",
@@ -25,34 +5,64 @@ var customPatterns = {
 	thetach: "C__________C|CC________CC|CC________CC|_CCCCCCCCCC_|_CCCCCCCCCC_|CCccccccccCC|CCccccccccCC|CCccccccccCC|CCccccccccCC|CCccccccccCC|CCccccCCCCCC|CCCCCCCCCCCC|CCCCCCccccCC|CCccccccccCC|CCccccccccCC|CCccccccccCC|CCccccccccCC|CCccccccccCC|_CCCCCCCCCC_|__CCCCCCCC__",
 	kolchok: "_____[#FF8800][#FF8800][#FF8800][#FF8800][#FF8800]_____|___[#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800]___|__[#FF8800][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#FF8800]__|_[#FF8800][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#FF8800]_|_[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]_|[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#FF8800][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]|[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]|[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]|[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]|[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]|_[#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800]_|_[#FF8800][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#FF8800]_|__[#FF8800][#FF8800][#FF8800][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#F0F0F0][#FF8800][#FF8800][#FF8800]__|___[#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800][#FF8800]___|_____[#FF8800][#FF8800][#FF8800][#FF8800][#FF8800]_____",
 	n0lch: "__M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]__|__[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M__|M[#BDBDBD]________M[#BDBDBD]|[#BDBDBD]M_____M[#BDBDBD]_[#BDBDBD]M|M[#BDBDBD]____M[#BDBDBD]M_M[#BDBDBD]|[#BDBDBD]M___M[#BDBDBD]M__[#BDBDBD]M|M[#BDBDBD]__M[#BDBDBD]M___M[#BDBDBD]|[#BDBDBD]M_M[#BDBDBD]M____[#BDBDBD]M|___[#BDBDBD]M___M___|___M___M[#BDBDBD]___|M[#BDBDBD]____M[#BDBDBD]M_M[#BDBDBD]|[#BDBDBD]M___M[#BDBDBD]M__[#BDBDBD]M|M[#BDBDBD]__M[#BDBDBD]M___M[#BDBDBD]|[#BDBDBD]M_M[#BDBDBD]M____[#BDBDBD]M|M[#BDBDBD]_[#BDBDBD]M_____M[#BDBDBD]|[#BDBDBD]M________[#BDBDBD]M|__M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]__|__[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M[#BDBDBD]M__",
-
+	standartNull: "..JJJJJJJJ../.JJJJJJJJJJ./JJjjjjjjjJJJ/JJjjjjjjJJJJ/JJjjjjjJJjJJ/JJjjjjjJJjJJ/JJjjjjJJjjJJ/JJjjjjJJjjJJ/JJjjjJJjjjJJ/JJjjjJJjjjJJ/JJjjJJjjjjJJ/JJjjJJjjjjJJ/JJjJJjjjjjJJ/JJjJJjjjjjJJ/JJJJjjjjjjJJ/JJJjjjjjjjJJ/.JJJJJJJJJJ./..JJJJJJJJ..",
 }
+, defaultPattern = customPatterns.standartNull;
+customPatterns.imBlue = customPatterns.standartNull.replace(/J/g, 'B').replace(/j/g, 'b');
 
 var loops = [ 
-	{ fileName: 'anonymous_0chan' },
-	{ fileName: 'aphex_twin_windowlicker' },
-	{ fileName: 'better_off_alone' },
-	{ fileName: 'binarpilot_goof' },
-	{ fileName: 'chrissu_rawfull_panorama' },
-	{ fileName: 'crystal_castles_crimeware' },
-	{ fileName: 'culine_die_for_you' },
-	{ fileName: 'daft_punk_around_the_world' },
-	{ fileName: 'eiffel_65_im_blue' },
-	{ fileName: 'london_elektricity_had_a_little_fight' },
-	{ fileName: 'massive_attack_paradise_circus_zeds_dead_rmx' },
-	{ fileName: 'mata_beach_sand' },
-	{ fileName: 'metrick_your_world' },
-	{ fileName: 'modified_motion_1up' },
-	{ fileName: 'monsta_holdin_on' },
-	{ fileName: 'paradise_cracked' },
-	{ fileName: 'paramyth_cowbell_rock' },
-	{ fileName: 'parove_stelar_the_phantom' },
-	{ fileName: 'scatman_john_ima_scatman' },
-	{ fileName: 'sigur_ros_saeglopur' },
-	{ fileName: 'the_laziest_men_on_mars_all_your_base_are_belong_to_us' },
-	{ fileName: 'the_prodigy_omen' },
-	{ fileName: 'underworld_cowgirl' },
-	{ fileName: 'kavinsky_nightcall' }
+	{fileName: 'anonymous_0chan' },
+	{fileName: 'aphex_twin_windowlicker' },
+	{fileName: 'better_off_alone' },
+	{fileName: 'binarpilot_goof' },
+	{fileName: 'chrissu_rawfull_panorama', tresholdCorrection: -0.1 },
+	{fileName: 'crystal_castles_crimeware' },
+	{fileName: 'culine_die_for_you' },
+	{fileName: 'daft_punk_around_the_world' },
+	{fileName: 'eiffel_65_im_blue' , customPattern: customPatterns.imBlue, tresholdCorrection: -0.1 },
+	{fileName: 'london_elektricity_had_a_little_fight' },
+	{fileName: 'massive_attack_paradise_circus_zeds_dead_rmx' },
+	{fileName: 'mata_beach_sand' },
+	{fileName: 'metrick_your_world' },
+	{fileName: 'modified_motion_1up' },
+	{fileName: 'monsta_holdin_on' },
+	{fileName: 'paradise_cracked', tresholdCorrection: -0.1 },
+	{fileName: 'paramyth_cowbell_rock' },
+	{fileName: 'parov_stelar_the_phantom' },
+	{fileName: 'scatman_john_ima_scatman' },
+	{fileName: 'sigur_ros_saeglopur', tresholdCorrection: 0.7 },
+	{fileName: 'the_laziest_men_on_mars_all_your_base_are_belong_to_us' },
+	{fileName: 'the_prodigy_omen' },
+	{fileName: 'underworld_cowgirl', tresholdCorrection: -0.1 },
+	{fileName: 'kirby_gourmet_race_rmx_by_ephixa' },
+	{fileName: 'smb2_overworld_theme_rmx_by_thisnameisafail' },
+	{fileName: 'fukkireta', tresholdCorrection: -0.05 },
+	{fileName: 'admincrack_sm_chipt0wn' , tresholdCorrection: -0.11},
+	{fileName: 'cid_minimal_injection', tresholdCorrection: 0.15 },
+	{fileName: 'dnb_relax', tresholdCorrection: 0.1 },
+	{fileName: 'megacore', tresholdCorrection: 0.08 },
+	{fileName: 'source_2007' },
+	{fileName: 'space' },
+	{fileName: 'RAC_aib_mertvyi_govno.ebanoe.mix_by_electrode', tresholdCorrection: 0.05 },
+	{fileName: 'valles_farewell' },
+	{fileName: 'nina_simone_dont_let_me_be_misunderstood_zeds_dead_rmx', tresholdCorrection: -0.05 },
+	{fileName: 'dope_stars_inc_make_a_star' },
+	{fileName: 'lana_dey_west_coast_ZHU_rmx', tresholdCorrection: 0.1 },
+	{fileName: 'noisia_vivaldi' },
+	{fileName: 'max_coveri_running_in_the_90s', tresholdCorrection: -0.05 },
+	{fileName: 'IOSYS_convictor_yamaxanadu' },
+	{fileName: 'rymdkraft_kantarelle' },
+	{fileName: 'i_want_to_believe_tinyurl.com-q3ee6sm' },
+	{fileName: 'skrillex_fire_away' },
+	{fileName: 'paradise_cracked_2' },
+	{fileName: '8bit_nomad' },
+	{fileName: 'the_flashdub_come_horn' },
+	{fileName: 'summer_of_haze_anthem_of_haze' },
+	{fileName: 'tv_on_the_radio_DLZ' },
+	{fileName: 'bionic_commando_rusko_rmx' },
+	/*{fileName: '' },*/
+	/*{fileName: '' },*/
+	/*{fileName: '' },*/
 ];
 
 var urlprefix = "loops/";
@@ -61,6 +71,8 @@ var fileFormat = (function() {
 	return (typeof testAudio.canPlayType === "function" && testAudio.canPlayType("audio/ogg") !== "")
 })() ? 'ogg' : 'mp3';
 
+var pattern = localStorage['customPattern'] || defaultPattern
+, isPatternCustom = false;
 
 function readyset() {
 	$canvas = $('#bars');
@@ -70,7 +82,7 @@ function readyset() {
 	bufferContext = bufferCanvas.getContext('2d');
 	
 	Grid.init('#nullgrid');
-	var pattern = localStorage['customPattern'] || defaultPattern;
+	
 	if(document.location.hash) 
 		pattern = decodeURIComponent(document.location.hash.split('#')[1]);
 	
@@ -373,6 +385,7 @@ var Grid = {
 		this.build(newPattern, 'over');
 		this.$el.parent().removeClass('edit-mode');
 		$('.triangle-group').slideUp();
+		pattern = newPattern;
 		localStorage.setItem('customPattern', newPattern);
 		$('#controls').slideDown();
 		$('#editmode').slideUp();
@@ -553,8 +566,16 @@ audio.loadLoop = function(immed, n) {
 		newLoop = loops[n];
 	}
 	else {
-		var reduced = (loops.length == 1) ? loops : loops.filter(function(e){return e!==currentLoop});
+		var reduced = (loops.length == 1) ? loops : loops.filter(function(e){return e.fileName!==currentLoop.fileName});
 		newLoop = reduced[Math.floor(Math.random() * reduced.length)];
+		if(newLoop.hasOwnProperty('customPattern')) {
+			Grid.build(newLoop.customPattern);
+			isPatternCustom = true;
+		}
+		else if(isPatternCustom) {
+			Grid.build(pattern);
+			isPatternCustom = false;
+		}
 	}
 
 	var req = new XMLHttpRequest();
@@ -628,7 +649,7 @@ audio.play = function() {
 	} 
 	else {
 		$('.wrapper-decor').fadeIn();
-		console.log('Current track: '+currentLoop.fileName);
+		console.info('Current track: '+currentLoop.fileName);
 
 		audio.source_loop = audio.context.createBufferSource();
 		audio.source_loop.buffer = audio.buffer;
@@ -672,7 +693,7 @@ var conf = {
 	barHeight: 240,
 	smoothing: 0.9,
 	fft_size: 512,
-	treshold: 0.8,
+	treshold: 0.78,
 	tresholdCorrection: 0,
 	domain: 'time',
 	flashProbability: 0.3,
