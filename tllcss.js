@@ -52,14 +52,14 @@ var loops = [
 	{fileName: 'max_coveri_running_in_the_90s', tresholdCorrection: -0.05 },
 	{fileName: 'IOSYS_convictor_yamaxanadu' },
 	{fileName: 'rymdkraft_kantarelle' },
-	{fileName: 'i_want_to_believe_tinyurl.com-q3ee6sm' },
-	{fileName: 'skrillex_fire_away' },
-	{fileName: 'paradise_cracked_2' },
-	{fileName: '8bit_nomad' },
+	{fileName: 'i_want_to_believe_tinyurl.com-q3ee6sm', tresholdCorrection: -0.1 },
+	{fileName: 'skrillex_fire_away', tresholdCorrection: 0.1 },
+	{fileName: 'paradise_cracked_2', tresholdCorrection: -0.15  },
+	{fileName: '8bit_nomad', tresholdCorrection: -0.15 },
 	{fileName: 'the_flashdub_come_horn' },
 	{fileName: 'summer_of_haze_anthem_of_haze' },
-	{fileName: 'tv_on_the_radio_DLZ' },
-	{fileName: 'bionic_commando_rusko_rmx' },
+	{fileName: 'tv_on_the_radio_DLZ', tresholdCorrection: -0.08 },
+	{fileName: 'bionic_commando_rusko_rmx', tresholdCorrection: 0.05 },
 	/*{fileName: '' },*/
 	/*{fileName: '' },*/
 	/*{fileName: '' },*/
