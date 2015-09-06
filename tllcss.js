@@ -30,7 +30,7 @@ var loops = [
 	{fileName: 'paramyth_cowbell_rock' },
 	{fileName: 'parov_stelar_the_phantom' },
 	{fileName: 'scatman_john_ima_scatman' },
-	{fileName: 'sigur_ros_saeglopur', tresholdCorrection: 0.7 },
+	{fileName: 'sigur_ros_saeglopur', tresholdCorrection: 0.2 },
 	{fileName: 'the_laziest_men_on_mars_all_your_base_are_belong_to_us' },
 	{fileName: 'the_prodigy_omen' },
 	{fileName: 'underworld_cowgirl', tresholdCorrection: -0.1 },
@@ -61,6 +61,11 @@ var loops = [
 	{fileName: 'tv_on_the_radio_DLZ', tresholdCorrection: -0.08 },
 	{fileName: 'bionic_commando_rusko_rmx', tresholdCorrection: 0.05 },
 	{fileName: 'pokemon_lavender_town_cyberoptics_rmx' },
+	{fileName: 'gay_mower_redirect_404', tresholdCorrection: -0.1  },
+	{fileName: 'squarehead_tricks_up_my_sleeve' },
+	{fileName: 'blarsa_grim_grinning_ghosts' },
+	/*{fileName: '' },*/
+	/*{fileName: '' },*/
 	/*{fileName: '' },*/
 	/*{fileName: '' },*/
 ];
@@ -775,9 +780,9 @@ VisualizerSample.prototype.draw = function() {
 }
 
 VisualizerSample.prototype.getFrequencyValue = function(freq) {
-  var nyquist = audio.context.sampleRate/2;
-  var index = Math.round(freq/nyquist * this.freqs.length);
-  return this.freqs[index];
+	var nyquist = audio.context.sampleRate/2;
+	var index = Math.round(freq/nyquist * this.freqs.length);
+	return this.freqs[index];
 }
 
 function Rarity(trim) {
@@ -803,46 +808,76 @@ function handleFile(evt, type) {
 	evt.stopPropagation();
 	evt.preventDefault();
 
-  var files = (type == "drop") ? evt.dataTransfer.files : evt.target.files;
-  var f = files[0];
+	var files = (type == "drop") ? evt.dataTransfer.files : evt.target.files;
+	var f = files[0];
 
-  if (!f.type.match('image.*')) return false
+	if (f.type.match('image.*')) {
+		var reader = new FileReader();
+		
+		reader.onload = (function(theFile) {
+			return function(e) {
+				var dataUrl = e.target.result;
+				toCanvas(dataUrl)
+			};
+		})(f);
 
-  var reader = new FileReader();
+		reader.readAsDataURL(f);
+	}
+
+	else if(f.type.match('audio.*')) {
+		var reader = new FileReader();
+		
+		reader.onload = (function(theFile) {
+			return function(e) {
+				audio.context.decodeAudioData(
+					e.target.result,
+					function(buffer) {
+						audio.stop(function() {
+							audio.buffer = buffer;
+							currentLoop.fileName = f.name;
+							audio.disabled = false;
+							audio.play();
+						});
+					},
+					function(error) {
+						console.log(error)
+					}
+				);
+			};
+		})(f);
+
+		reader.readAsArrayBuffer(f);
+	}
+
+	else {
+		alert('Дропнутый файл не является ни картинкой, ни аудиофайлом.')
+	}
 	
-  reader.onload = (function(theFile) {
-    return function(e) {
-      var dataUrl = e.target.result;
-      toCanvas(dataUrl)
-    };
-  })(f);
-
-  reader.readAsDataURL(f);
-  return false
+	return false
 }
 function handleDragOver(evt) {
-  evt.stopPropagation();
-  evt.preventDefault();
-  evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+	evt.stopPropagation();
+	evt.preventDefault();
+	evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 function toCanvas(dataURL) {
 
-  // load image from data url
-  var imageObj = new Image();
-  imageObj.onload = function() {
-  	bufferCanvas.height = this.height;
-  	bufferCanvas.width = this.width;
-    bufferContext.drawImage(this, 0, 0);
-    Grid.fromCanvas();
-  };
+	// load image from data url
+	var imageObj = new Image();
+	imageObj.onload = function() {
+		bufferCanvas.height = this.height;
+		bufferCanvas.width = this.width;
+		bufferContext.drawImage(this, 0, 0);
+		Grid.fromCanvas();
+	};
 
-  imageObj.src = dataURL;
+	imageObj.src = dataURL;
 }
 
 function downloadURI(uri, name) 
 {
-  var link = document.createElement("a");
-  link.download = name;
-  link.href = uri;
-  link.click();
+	var link = document.createElement("a");
+	link.download = name;
+	link.href = uri;
+	link.click();
 }
