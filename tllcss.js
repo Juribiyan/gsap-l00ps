@@ -64,8 +64,8 @@ var loops = [
 	{fileName: 'gay_mower_redirect_404', tresholdCorrection: -0.1  },
 	{fileName: 'squarehead_tricks_up_my_sleeve' },
 	{fileName: 'blarsa_grim_grinning_ghosts' },
-	/*{fileName: '' },*/
-	/*{fileName: '' },*/
+	{fileName: 'chelo_zero_keljet_rmx' },
+	{fileName: 'scurry_mansters', tresholdCorrection: 0.05 },
 	/*{fileName: '' },*/
 	/*{fileName: '' },*/
 ];
