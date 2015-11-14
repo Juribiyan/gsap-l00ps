@@ -1,0 +1,53 @@
+DirectoryIndex index.html
+AddCharset UTF-8 .html
+AddCharset UTF-8 .php
+
+AddType video/mp4 mp4 m4v
+AddType audio/mp4 m4a
+AddType video/ogg ogv
+AddType audio/ogg ogg oga
+AddType video/webm webm
+
+FileETag None
+
+ErrorDocument 403 /index.php?p=403
+ErrorDocument 404 /index.php?p=404
+
+# Anti-pekacefaling
+<Limit GET POST>
+BrowserMatchNoCase "Feedfetcher-Google" feedfetcher
+BrowserMatchNoCase "facebookexternalhit" facebook
+order deny,allow
+deny from env=feedfetcher
+deny from env=facebook
+</Limit>
+
+<IfModule mod_headers.c>
+<Files *.html>
+Header add Expires "Mon, 26 Jul 1997 05:00:00 GMT"
+Header add Pragma "no-cache"
+Header add Cache-Control "max-age=0; must-revalidate; no-cache; no-store"
+Header set Expires "0"
+Header unset Vary
+</Files>
+#cache css, javascript and text files for one week
+<FilesMatch ".(js|css|txt)$">
+Header set Cache-Control "max-age=604800"
+</FilesMatch>
+
+#cache flash and images for one month
+<FilesMatch ".(flv|swf|ico|gif|jpg|jpeg|png)$">
+Header set Cache-Control "max-age=2592000"
+</FilesMatch>
+</IfModule>
+
+Options All -Indexes
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/text text/html text/plain text/xml text/css application/x-javascript application/javascript application/json
+</IfModule>
+
+php_value upload_max_filesize 9M
+php_value post_max_size 9M
+php_value max_execution_time 1000
+php_value max_input_time 1000

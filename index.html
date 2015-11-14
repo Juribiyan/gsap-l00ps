@@ -2,21 +2,27 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>TLL CSS test</title>
-	<link rel="stylesheet" href="style.css"></head>
+	<!-- <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />. --><!-- (for testing on IE on local environment; breaks style changing) -->
+	<title>Løøps 2.0</title>
 	<link rel="stylesheet" href="font.css"></head>
-	<script src="lodash.js"></script>
-	<script src="jquery.min.js"></script>
-	<script src="tinycolor.js"></script>
-	<script src="TweenMax.min.js"></script>
-	<script src="jscolor/jscolor.js"></script>
-	<script src="tllcss.js"></script>
+	<link rel="stylesheet" href="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.min.css" />
+	<!-- <link href="http://fonts.googleapis.com/css?family=Roboto:400,700,400italic,700italic&amp;subset=latin,cyrillic" rel="stylesheet" type="text/css"> -->
+	<link rel="stylesheet" href="style.css?v=2"></head>
+	<script src="lib/lodash.js"></script>
+	<script src="lib/jquery.min.js"></script>
+	<script src="lib/tinycolor.js"></script>
+	<script src="lib/TweenMax.min.js"></script>
+	<script src="lib/jquery.gsap.min.js"></script>
+	<script src="lib/jscolor/jscolor.js"></script>
+	<script src="lib/cheet.min.js"></script>
+	<script src="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.concat.min.js?v=3.0.9"></script>
+	<script src="loops.js?v=3.2"></script>
 </head>
 <body>
-	<div class="wrapper wrapper-decor wrapper-xh" id="bars-wrap">
+	<div class="wrapper wrapper-decor wrapper-xh onoscdisable-hide" id="bars-wrap">
 		<canvas id="bars" height="240" width="850"></canvas>
 	</div>
-	<div class="wrapper wrapper-decor wrapper-xh" id="shadow-wrap">
+	<div class="wrapper wrapper-decor wrapper-xh onoscdisable-hide" id="shadow-wrap">
 		<div id="shadow"></div>
 	</div>
 	<div class="wrapper" id="grid-wrap">
@@ -31,7 +37,7 @@
 			</div>
 			<div id="cells">
 				<div id="overlays"></div>
-				<div id="sizeIndicator">88×88</div>
+				<div id="sizeIndicator">14×88</div>
 			</div>
 			<div class="triangle-group tg-right">
 				<div class="triangle t-right"></div><br>
@@ -44,62 +50,146 @@
 		</div>
 	</div>
 	<div class="wrapper wrapper-xh" id="clicker-wrap">
-		<div id="controls">
-			<a href="#" onclick="Grid.enterPaintMode()" class="panel-opener">Редактировать</a>
-			<a href="#" id="playSwitcher">Loading...</a>
-			<a href="#" onclick="$('#nerdmode').slideToggle('fast')" class="panel-opener">Настройка</a>
+		<div class="player-controls" id="controls">
+			<a title="Библиотека паттернов" href="#" onclick="$('#pattern-library').toggleClass('open-lib');"><i class="i-grid"></i></a>
+			<a title="Редактировать паттерн" href="#" onclick="Grid.enterPaintMode()" class="panel-opener"><i class="i-pattern-edit"></i></a>
+			<a href="#" id="playSwitcher" onclick="javascript:audio.play();return false;"><i class="i-play-big"></i></a>
+			<a title="Случайный луп"  href="#" id="playRandom" onclick="javascript:AllTracks.random();return false;"><i class="i-shuffle"></i></a>
+			<a title="Настройки визуализации" href="#" onclick="$('#nerdmode').slideToggle('fast')"><i class="i-tweaks"></i></a>
+			<a title="Библиотека лупов" href="#" onclick="$('#loop-library').toggleClass('open-lib');"><i class="i-note"></i></a>
 		</div>
 	</div>
 	
 	<div class="panel-wrap" id="editmode">
-		<div class="panel">
-			<div class="p-block">
-				<button title="Экспортировать паттерн" class="text-button action-button" data-act="export"><i class="i-totext"></i></button>
-				<button title="Сохранить как картинку" class="text-button action-button" data-act="download"><i class="i-download"></i></button>
-				<button title="Нарисовать паттерн" class="text-button action-button" data-act="import"><i class="i-fromtext"></i></button>
-				<button title="Импортировать картинку" class="text-button action-button" data-act="upload"><i class="i-upload"></i><input type="file" id="bufferFileInput" style="display:none" /></button>
-				<br>
-				<div class="textarea-wrap p-block">
-					<textarea id="pattern-area" cols="30" rows="10"></textarea>
-				</div>
+		<div class="emsgwrap">
+			<div class="pop-message">
+				<span class="emsgbody"></span>
+				<i class="i-x-large close-button"></i>
 			</div>
-			<div class="p-block">
+		</div>
+		<div class="panel">
+			<div class="gets-hidden">
 				<div class="p-block">
-					<button title="Рисование" class="tool" data-tool="draw"><i class="i-draw"></i></button>
-					<button title="Ластик" class="tool" data-tool="eraser"><i class="i-eraser"></i></button>
-					<button title="Пипетка" class="tool" data-tool="dropper"><i class="i-dropper"></i></button>
+					<button title="Экспортировать паттерн" class="text-button action-button" data-act="export"><i class="i-totext"></i></button>
+					<button title="Сохранить как картинку" class="text-button action-button" data-act="download"><i class="i-download"></i></button>
+					<button title="Нарисовать паттерн" class="text-button action-button" data-act="import"><i class="i-fromtext"></i></button>
+					<button title="Импортировать картинку" class="text-button action-button" data-act="upload"><i class="i-upload"></i><input type="file" id="bufferFileInput" style="display:none" /></button>
 					<br>
-					<input id="colorpicker" class="color swatch">
-				</div>
-				<div class="p-block" id="fixed-palette">
-					<div class="swatch" data-c="G"></div>
-					<div class="swatch" data-c="J"></div>
-					<div class="swatch" data-c="Y"></div>
-					<div class="swatch" data-c="O"></div>
-					<div class="swatch" data-c="B"></div>
-					<div class="swatch" data-c="C"></div>
-					<div class="swatch" data-c="V"></div>
-					<div class="swatch" data-c="M"></div>
-					<br>
-					<div class="swatch" data-c="g"></div>
-					<div class="swatch" data-c="j"></div>
-					<div class="swatch" data-c="y"></div>
-					<div class="swatch" data-c="o"></div>
-					<div class="swatch" data-c="b"></div>
-					<div class="swatch" data-c="c"></div>
-					<div class="swatch" data-c="v"></div>
-					<div class="swatch" data-c="m"></div>
+					<div class="textarea-wrap p-block">
+						<textarea id="pattern-area" cols="30" rows="10"></textarea>
+					</div>
 				</div>
 				<div class="p-block">
-					<button class="action-button" title="Очистить поле" data-act="clear"><i class="i-clear"></i></button>
-					<button class="action-button" title="Закрыть" data-act="close"><i class="i-close"></i></button>
+					<div class="p-block">
+						<button title="Рисование" class="tool" data-tool="draw"><i class="i-draw"></i></button>
+						<button title="Ластик" class="tool" data-tool="eraser"><i class="i-eraser"></i></button>
+						<button title="Пипетка" class="tool" data-tool="dropper"><i class="i-dropper"></i></button>
+						<br>
+						<input id="colorpicker" class="color swatch">
+					</div>
+					<div class="p-block" id="fixed-palette">
+						<div class="swatch" data-c="G"></div>
+						<div class="swatch" data-c="J"></div>
+						<div class="swatch" data-c="Y"></div>
+						<div class="swatch" data-c="O"></div>
+						<div class="swatch" data-c="B"></div>
+						<div class="swatch" data-c="C"></div>
+						<div class="swatch" data-c="V"></div>
+						<div class="swatch" data-c="M"></div>
+						<br>
+						<div class="swatch" data-c="g"></div>
+						<div class="swatch" data-c="j"></div>
+						<div class="swatch" data-c="y"></div>
+						<div class="swatch" data-c="o"></div>
+						<div class="swatch" data-c="b"></div>
+						<div class="swatch" data-c="c"></div>
+						<div class="swatch" data-c="v"></div>
+						<div class="swatch" data-c="m"></div>
+					</div>
+					<div class="p-block">
+						<button class="action-button" title="Очистить поле" data-act="clear"><i class="i-clear"></i></button>
+						<button class="action-button" title="Закрыть" data-act="close"><i class="i-x-large"></i></button>
+						<br>
+						<button class="action-button" title="Поделиться" data-act="share_pattern"><i class="i-cloud"></i></button>
+						<button class="action-button" title="Вернуть дефолтный паттерн" data-act="revert"><i class="i-zero"></i></button>
+					</div>
 					<br>
-					<button class="action-button" title="Залить рандомом" data-act="random"><i class="i-random"></i></button>
-					<button class="action-button" title="Вернуть дефолтный паттерн" data-act="revert"><i class="i-revert"></i></button>
+					<div class="p-block dp-wrap"><div class="p-block" id="dynamic-palette" title="Динамическая палитра"></div></div>
 				</div>
 				<br>
-				<div class="p-block dp-wrap"><div class="p-block" id="dynamic-palette"></div></div>
-			</div><br>
+				<div style="text-align: center">
+					<div class="p-block editmode-extrafeatures">
+						Стиль ячеек:
+						<select name="cell-style" id="cell-style"><!-- Values to add dynamically --></select>
+					</div>
+					<div class="p-block editmode-extrafeatures">
+						Цвет осциллоскопа:
+						<select name="osc-sel" id="osc-sel">
+							<option value="default">По умолчанию</option>
+							<option value="custom">Выбрать цвет</option>
+							<option value="off">Отключен</option>
+						</select>
+						<input type="text" class="onoscdisable-hide color" id="osc-color" disabled>
+						<button class="onoscdisable-hide action-button" title="Установить цвет по умолчанию" data-act="recount_base_color"><i class="i-revert"></i></button>
+					</div>
+				</div>
+				<br class="onshare-show">
+				<form class="uploadbox onshare-show" id="pattern-share">
+					<div class="panel-name">
+						<span class="onedit-hide ondelete-hide">Добавить паттерн</span>
+						<span class="onedit-show">
+							<span>Редактировать паттерн</span>
+							<span id="patternedit-id" class="title-id"></span>
+						</span>
+						<div class="ondelete-show">
+							<span class="delete-title">Удалить паттерн</span>
+							<span id="patterndelete-id" class="title-id"></span>
+						</div>
+					</div>
+					<div class="p-block">
+						<input type="text" placeholder="Имя паттерна (пожалуйста, короче)" class="odelete-hide txtinput validable filename ondelete-hide special-margins-1" data-tovalid="filename">
+						<br class="ondelete-hide">
+						<div class="delpassbox">
+							<i class="i-password password-reveal"></i>
+							<input type="password" class="txtinput delpass validable" placeholder="Пароль для удаления" data-tovalid="delpass">
+						</div>
+					</div>
+					<div class="p-block captchablock">
+						<img class="captcha" alt="Обновить капчу" width="150" height="30">
+						<br>
+						<input type="text" class="txtinput validable captchainput" data-tovalid="captcha"><br>
+					</div>
+					<div class="p-block ondelete-hide">
+						<button type="submit" class="big-button upload-button" title="Загрузить паттерн" disabled><i class="i-cloud big-icon"></i></button>
+					</div>
+					<div class="p-block ondelete-show">
+						<button type="submit" class="big-button upload-button btb-del" title="Удалить паттерн" disabled><i class="i-x-large big-icon"></i></button>
+					</div>
+					<br>
+					<div class="p-block ondelete-hide">
+						<label for="assoc_loop"><input class="oncheck-enable" data-element-toenable="#loop-toassoc" type="checkbox" name="assoc_loop" id="assoc_loop">Связать с лупом</label>
+						<select name="loop-toassoc" id="loop-toassoc" disabled><!-- Values to add dynamically --></select>
+						<button class="action-button flip-h" title="Указать луп" data-act="select_loop"><i class="i-select"></i></button>
+					</div>
+					<br class="foradmin-show ondelete-hide">
+					<div class="nm-block nm-full p-block datetime-block foradmin-show ondelete-hide">
+						<input type="date" id="pattern-date">	
+						<input type="time" step="1" id="pattern-time">
+						<select value="custom" name="pattern_section" id="pattern-section">
+							<option value="default">Default</option>
+							<option value="custom">Custom</option>
+						</select>
+						<br class="onedit-show">
+						<div class="p-block ondelete-hide nm-full onedit-show">
+							<label class="onedit-show" for="pattern_take_ownership"><input type="checkbox" name="take_ownership" id="pattern_take_ownership">Take ownership</label>
+						</div>
+					</div>
+					<br>
+				</form>
+			</div>
+			<div class="hijab">
+				<img src="spinner.svg" height="78" width="78">
+			</div>
 		</div>
 	</div>
 	
@@ -132,13 +222,158 @@
 				<label for="smoothing">Степень сглаживания (<span class="indicator"></span>)</label><br>
 				<input type="range" name="smoothing" min="0" max="1" step="0.01">
 			</div>
+			<br>
+			<div class="nm-block p-block">
+				<input type="checkbox" id="osc-toggle" checked><label for="osc-toggle">Показывать осциллоскоп</label>
+			</div>
+			<div class="nm-block p-block">
+				<input type="checkbox" id="assoc-toggle"><label for="assoc-toggle">Ассоциация лупов с паттернами</label>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel-wrap uploadbox" id="loop-upload" style="display:none">
+		<div class="emsgwrap">
+			<div class="pop-message">
+				<span class="emsgbody"></span>
+				<i class="i-x-large close-button"></i>
+			</div>
+		</div>
+		<div class="panel">
+			<i class="i-x-large close-button panel-close"></i>
+			<form class="gets-hidden">
+				<div class="panel-name">
+					<span class="onedit-hide ondelete-hide">Загрузить луп</span>
+					<span class="onedit-show">
+						<span>Редактировать луп</span>
+						<span id="loopedit-id" class="title-id"></span>
+					</span>
+					<div class="ondelete-show">
+						<span class="delete-title">Удалить луп</span>
+						<span id="loopdelete-id" class="title-id"></span>
+					</div>
+				</div>
+				<div class="p-block ondelete-expand">
+					<input type="text" placeholder="Имя трека" class="txtinput validable filename ondelete-hide" data-tovalid="filename">
+					<br>
+					<div class="delpassbox">
+						<i class="i-password password-reveal"></i>
+						<input type="password" class="txtinput delpass validable" placeholder="Пароль для удаления" data-tovalid="delpass">
+					</div>
+				</div>
+				<div class="p-block ondelete-hide">
+					<button type="submit" class="big-button upload-button" title="Загрузить луп" disabled><i class="i-cloud big-icon"></i></button>
+				</div>
+				<br>
+				<div class="nm-block p-block nm-full ondelete-hide" id="userTresholdCorrection">
+					<label for="treshold">Корректировка порога срабатывания (<span class="indicator"></span>)</label><br>
+					<input type="range" name="tresholdCorrection" min="-0.3" max="0.3" step="0.01" value="0"><br/>
+				</div>
+				<div class="nm-block p-block nm-full ondelete-hide">
+					<button class="action-button" title="Указать паттерн" data-act="select_pattern"><i class="i-select"></i></button>
+					<label for="assoc_pattern"><input class="oncheck-enable" data-element-toenable="#pattern-toassoc" type="checkbox" name="assoc_pattern" id="assoc_pattern">Связать с паттерном</label>
+					<select name="pattern-toassoc" id="pattern-toassoc" disabled>
+					<!-- Values to add dynamically -->
+					</select>
+				</div>
+				<span class="foradmin-show ondelete-hide">
+					<div class="nm-block nm-full p-block datetime-block">
+						<input type="date" id="loop-date">	<input type="time" step="1" id="loop-time">
+					</div>
+					<div class="nm-block nm-full p-block datetime-block">
+						<select value="custom" name="loop_section" id="loop-section">
+							<option value="dead">Dead</option>
+							<option value="live">Live</option>
+							<option value="custom">Custom</option>
+						</select>
+						<input type="text" id="loop-swf" class="txtinput" name="swf" placeholder="link to SWF" style="margin-left: 10px">
+						<br>
+						<div class="nm-block nm-full p-block onedit-show">
+							<label for="loop_take_ownership"><input type="checkbox" name="take_ownership" id="loop_take_ownership">Take ownership</label>
+						</div>
+					</div>
+				</span>
+				<div class="captchablock">
+					<img class="captcha" alt="Обновить капчу" width="150" height="30">
+					<i class="i-right captcha-pointer"></i>
+					<input type="text" class="txtinput validable captchainput" data-tovalid="captcha"><br>
+				</div>
+				<br class="ondelete-show">
+				<div class="nm-block p-block nm-full ondelete-show panel-delete">
+					<button type="submit" class="big-text-btn btb-del">
+						<i class="i-x-small"></i> Удалить</a>
+					</button>
+				</div>
+			</form>
+			<div class="hijab">
+				<img src="spinner.svg" height="78" width="78">
+			</div>
 		</div>
 	</div>
 	<canvas id="bufferCanvas" style="display:none"></canvas>
 	<a href="#" id="bufferLink" style="display:none" download="pattern.png"></a>
-
-	<div id="content">
+	
+	<!-- <div id="content"></div> -->
+	
+	<div class="library" id="loop-library">
+		<div class="lib-header">
+			<div class="lh-tab ltab-close lht-small">
+				<i class="i-x-large"></i>
+			</div>
+			<div class="onsearch-hide ll-tabs">
+				<div class="lh-tab tab-switch tabgroup-loops tab-to-select-by-default" data-tabgroup="loops" id="ltab-default" data-tab="default-loops">
+					<div class="lht-title">Default</div>
+					<i class="onactive-show play-enabler" title="Воспроизводить треки из этого списка"></i>
+					<i class="onactive-show sorter"></i>
+				</div>
+				<div class="lh-tab tab-switch tabgroup-loops" data-tabgroup="loops" id="ltab-custom" data-tab="custom-loops">
+					<div class="lht-title">Custom</div>
+					<i class="onactive-show play-enabler" title="Воспроизводить треки из этого списка"></i>
+					<i class="onactive-show sorter"></i>
+				</div>
+			</div>
+			<form class="lh-tab active lib-header onsearch-show searchbox" id="loop-searchbox">
+				<input class="libsearch-input" type="text" id="loop-search">
+			</form>
+			<div class="lh-tab lib-search lht-small unsearch" data-tabgroup="loops" id="ltab-search">
+				<i class="i-search onsearch-hide"></i>
+				<i class="i-x-small onsearch-show"></i>
+			</div>
+		</div>
+    <div class="lt-contents scrollable">
+      <div class="tab-contents tabgroup-loops" data-lib="default" id="default-loops"></div>
+      <div class="tab-contents tabgroup-loops" data-lib="custom" id="custom-loops"></div>
+    </div>
 	</div>
+	<div class="library" id="pattern-library">
+		<div class="lib-header">
+		<div class="lh-tab lib-search lht-small unsearch" data-tabgroup="patterns" id="ptab-search">
+				<i class="i-search onsearch-hide"></i>
+				<i class="i-x-small onsearch-show"></i>
+			</div>
+			<div class="onsearch-hide ll-tabs">
+				<div class="lh-tab tab-switch tabgroup-patterns tab-to-select-by-default" data-tabgroup="patterns" id="ptab-default" data-tab="default-patterns">
+					<div class="lht-title">Default</div>
+					<i class="onactive-show sorter"></i>
+				</div>
+				<div class="lh-tab tab-switch tabgroup-patterns" data-tabgroup="patterns" id="ptab-custom" data-tab="custom-patterns">
+					<div class="lht-title">Custom</div>
+					<i class="onactive-show sorter"></i>
+				</div>
+			</div>
+			<form class="lh-tab active lib-header onsearch-show searchbox" id="pattern-searchbox">
+				<input class="libsearch-input" type="text" id="pattern-search">
+			</form>
+			<div class="lh-tab ptab-close lht-small">
+				<i class="i-x-large"></i>
+			</div>
+		</div>
+    <div class="lt-contents scrollable">
+      <div class="tab-contents tabgroup-patterns" id="default-patterns"></div>
+      <div class="tab-contents tabgroup-patterns" id="custom-patterns"></div>
+    </div>
+	</div>
+
 	
 	<script>
 	$('document').ready(readyset)
