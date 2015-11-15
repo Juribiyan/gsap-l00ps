@@ -1446,6 +1446,8 @@ var audio = {
 
 var currentLoop = {};
 
+var expectedLoop;
+
 audio.stop = function(callback) {
 	if(audio.source_loop._playing) {
 		TweenLite.to(gainNode.gain, 0.2, {value: 0, onComplete: function() {
@@ -1471,13 +1473,16 @@ audio.loadLoop = function(immed, loop) {
 	else return console.log('unsupported')
 
 	var req = new XMLHttpRequest();
+	
+	var expectedToken = ''+loop.original_hash+(new Date().getTime());
+	expectedLoop = expectedToken;
 		
 	req.onload = function() {
+		if(expectedToken === expectedLoop)
 		audio.context.decodeAudioData(
 			req.response,
 			function(buffer) {
 				conf.tresholdCorrection = +newLoop.treshold_correction || 0;
-
 				audio.buffer = buffer;
 				audio.source_loop = {};
 				currentLoop  = newLoop;
