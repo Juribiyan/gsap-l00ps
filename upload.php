@@ -178,8 +178,11 @@ function loop_probe() {
 	global $is_admin, $pass, $tc_db, $loop, $original_hash, $section;
 
 	$loop4shell = escapeshellarg($loop);
-	$probe = shell_exec('ffprobe -v quiet -i '.$loop4shell.' -print_format json -show_format 2>&1');
-	$result = json_decode($probe, true);
+	$x=1;  exec('ffprobe -v quiet -i '.$loop4shell.' -print_format json -show_format 2>&1', $probe, $x);
+	if($x != 0)
+		retreat('transcode_error', 'FFMprobe выдал ошибку при зондировании файла');
+	var_dump($probe);
+	$result = json_decode(implode('', $probe), true);
 	if(!$result)
 		retreat('transcode_error', 'FFProbe не может обработать файл.');
 	if(!empty($result['error']))
@@ -202,8 +205,8 @@ function loop_probe() {
 		/* Okay fine */
 		if($format['format_name'] != "mp3") {
 			$mp3_path = 'loops/'.$section.'/'.$original_hash.'.mp3';
-			exec('ffmpeg -y -i '.$loop4shell.' -loglevel error -q:a '.MP3_Q.' '.escapeshellarg($mp3_path).' 2>&1', $mp3_enc_res);
-			if(!empty($mp3_enc_res))
+			$x=1; exec('ffmpeg -y -i '.$loop4shell.' -loglevel error -q:a '.MP3_Q.' '.escapeshellarg($mp3_path).' 2>&1', $mp3_enc_res, $x);
+			if($x != 0 || !empty($mp3_enc_res))
 				retreat('transcode_error', 'FFMpeg выдал ошибку при кодировании в MP3: \n'.implode('\n', $mp3_enc_res));
 			$mp3_hash = hash_file('crc32b', $mp3_path);
 			$samehash = $tc_db->GetOne('SELECT `name` FROM `'.LOOPS_DBNAME.'` WHERE `original_hash`= ? OR `mp3_hash`= ?', array($mp3_hash, $mp3_hash));
@@ -212,8 +215,8 @@ function loop_probe() {
 		}
 		if($format['format_name'] != "ogg") {
 			$ogg_path = 'loops/'.$section.'/'.$original_hash.'.ogg';
-			exec('ffmpeg -y -i '.$loop4shell.' -loglevel error -q:a '.OGG_Q.' '.escapeshellarg($ogg_path).' 2>&1', $ogg_enc_res);
-			if(!empty($ogg_enc_res))
+			$x=1; exec('ffmpeg -y -i '.$loop4shell.' -loglevel error -q:a '.OGG_Q.' '.escapeshellarg($ogg_path).' 2>&1', $ogg_enc_res, $x);
+			if($x != 0 || !empty($ogg_enc_res))
 				retreat('transcode_error', 'FFMpeg выдал ошибку при кодировании в OGG: \n'.implode('\n', $ogg_enc_res));
 			$ogg_hash = hash_file('crc32b', $ogg_path);
 			$samehash = $tc_db->GetOne('SELECT `name` FROM `'.LOOPS_DBNAME.'` WHERE `original_hash`= ? OR `ogg_hash`= ?', array($ogg_hash, $ogg_hash));

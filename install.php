@@ -19,11 +19,11 @@ if(!isset($_POST['proceed'])) {
   $ogg_i = escapeshellarg('install/media/test.ogg');
   $mp3_o = escapeshellarg('install/media/test_o.mp3');
   $ogg_o = escapeshellarg('install/media/test_o.ogg');
-  exec('ffmpeg -y -i '.$ogg_i.' -loglevel error -q:a '.MP3_Q.' '.$mp3_o.' 2>&1', $mp3_enc_err);
-  if(!empty($mp3_enc_err))
+  $x=1; exec('ffmpeg -y -i '.$ogg_i.' -loglevel error -q:a '.MP3_Q.' '.$mp3_o.' 2>&1', $mp3_enc_err, $x);
+  if($x !== 0 || !empty($mp3_enc_err))
     retreat('FFMpeg выдал ошибку при кодировании из OGG в MP3');
-  exec('ffmpeg -y -i '.$mp3_i.' -loglevel error -q:a '.OGG_Q.' '.$ogg_o.' 2>&1', $ogg_enc_err);
-  if(!empty($ogg_enc_err))
+  $x=1; exec('ffmpeg -y -i '.$mp3_i.' -loglevel error -q:a '.OGG_Q.' '.$ogg_o.' 2>&1', $ogg_enc_err, $x);
+  if($x !== 0 || !empty($ogg_enc_err))
     retreat('FFMpeg выдал ошибку при кодировании из MP3 в OGG');
   unlink('install/media/test_o.mp3');
   unlink('install/media/test_o.ogg');
