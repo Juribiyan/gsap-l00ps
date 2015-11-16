@@ -22,6 +22,7 @@ define('MAX_TRESHC', 0.3);  // treshold constraints
 define('MIN_TRESHC', -0.3); // treshold constraints
 
 define('NAME_TRUNC', 100);   // length constraints
+define('DELPASS_TRUNC', 30); // length constraints
 
 define('MAX_SIZE', 50); // pattern size constraint
 
