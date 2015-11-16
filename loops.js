@@ -582,15 +582,13 @@ function readyset() {
 	if(localStorage['loops_association'])
 		try {
 			conf.association = JSON.parse(localStorage['loops_association']);
-			if(!conf.association)
-				$('#assoc-toggle')[0].checked = false;
+			$('#assoc-toggle')[0].checked = conf.association;
 		}
 		catch(e) {
 			throw e;
-			localStorage['loops_association'] = true;
+			localStorage['loops_association'] = false;
 		}
 	$('#assoc-toggle').change(function() {
-		console.log($(this)[0].checked)
 		conf.association = localStorage['loops_association'] = $(this)[0].checked;
 	});
 	if(localStorage['osc_enabled'])
