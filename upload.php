@@ -7,8 +7,7 @@ require 'common_config.php';
 if(isset($_GET['check'])) {
 	exit(json_encode(array(
 		max_loop_fszkb => MAX_LOOP_FSZKB,
-		max_filename_length => NAME_TRUNC,
-		max_delpass_length => DELPASS_TRUNC
+		max_filename_length => NAME_TRUNC
 	)));
 }
 
