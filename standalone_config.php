@@ -5,7 +5,6 @@ define('KU_DBHOST', 'localhost');
 define('KU_DBDATABASE', 'metach');
 define('KU_DBUSERNAME', 'root');
 define('KU_DBPASSWORD', '');
-define('KU_DBPREFIX', '');
 define('KU_DBUSEPERSISTENT', false);
 
 require 'lib/adodb/adodb.inc.php';
