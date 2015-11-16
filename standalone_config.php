@@ -7,6 +7,7 @@ define('KU_DBUSERNAME', 'root');
 define('KU_DBPASSWORD', '');
 define('KU_DBUSEPERSISTENT', false);
 
+// do not edit below this line
 require 'lib/adodb/adodb.inc.php';
 if (!isset($tc_db) && !isset($preconfig_db_unnecessary)) {
 	$tc_db = &NewADOConnection(KU_DBTYPE);
