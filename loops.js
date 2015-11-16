@@ -298,7 +298,7 @@ function readyset() {
 	/* Loop library */
 	$.getJSON('custom_loops.json?'+Math.random())
 	.done(function(data) {
-		loopLibs.custom = new TrackList(data, '#custom-loops', 'custom', true, $('#ltab-custom i.sorter'), 'date', 'desc', false, $('#ltab-custom i.play-enabler'));
+		loopLibs.custom = new TrackList(data, '#custom-loops', 'custom', true, $('#ltab-custom i.sorter'), 'date', 'desc', true, $('#ltab-custom i.play-enabler'));
 	})
 	.fail(console.error);
 	$.getJSON('default_loops.json?'+Math.random())
