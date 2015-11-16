@@ -223,7 +223,7 @@ function readyset() {
 						if(res.errtype === 'prompt_edit') {
 							try {
 								var data = JSON.parse(res.extra_data);
-								loopEditor.prepare(data);
+								loopEditor.prepareEdit(data);
 								errBox.pop($('#loop-upload'), _.escape(res.msg)+' <a href="javascript:loopEditor.edit();">Отредактировать луп «'+_.escape(data.name)+'»</a>?', 'prompt', 'raw');
 							}
 							catch(e) {
