@@ -34,4 +34,5 @@ INSERT INTO `__LOOPDB__` (`id`, `name`, `duration`, `delpass`, `date`, `original
 (33, 'Lana Del Rey – West Coast (ZHU Remix)', 33.1494, '__MASTERPASS__', '2015-01-24 13:00:00', 'cc85aaf4', 'cc85aaf4', 'f6e24ff0', 0.1, 'dead', 'dead/west_coast.swf', 6),
 (34, 'Summer Of Haze — ∆nthem Of Haze', 51.2522, '__MASTERPASS__', '2015-06-23 13:00:00', '5170115a', '5170115a', '85c7bcdd', 0, 'dead', 'dead/summer_of_haze.swf', 6),
 (35, 'Время и Стекло — Имя 505', 63.8907, '__MASTERPASS__', '2015-08-09 13:00:00', '72a80a1c', '72a80a1c', 'baac9ab5', 0, 'dead', 'dead/name505.swf', 6),
-(36, 'Chela — Zero (Keljet remix)', 87.195, '__MASTERPASS__', '2015-09-07 13:00:00', 'd9f8a1a3', 'd9f8a1a3', '88557c2a', 0, 'dead', 'dead/chela_zero.swf', 6);
+(36, 'Chela — Zero (Keljet remix)', 87.195, '__MASTERPASS__', '2015-09-07 13:00:00', 'd9f8a1a3', 'd9f8a1a3', '88557c2a', 0, 'dead', 'dead/chela_zero.swf', 6),
+(37, '[NY''16] Dirtyphonics — Anonymous', 87.7715, '__MASTERPASS__', '2015-12-31 00:00:00', '2ed84707', '7cc5b4a1', '2ed84707', 0, 'dead', 'dead/ny16/dirtyphonics_anonymous.swf', 5);
