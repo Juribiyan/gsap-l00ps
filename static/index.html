@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Løøps</title>
+	<!-- <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />. --><!-- (for testing on IE in local environment; breaks style changing) -->
+	<title>Løøps 2.0</title>
 	<link rel="stylesheet" href="font.css"></head>
 	<link rel="stylesheet" href="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.min.css" />
 	<link href="http://fonts.googleapis.com/css?family=Roboto:400,700,400italic,700italic&amp;subset=latin,cyrillic" rel="stylesheet" type="text/css">
@@ -15,7 +16,7 @@
 	<script src="lib/jscolor/jscolor.js"></script>
 	<script src="lib/cheet.min.js"></script>
 	<script src="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.concat.min.js"></script>
-	<script src="loops.js"></script>
+	<script src="loops-static.js"></script>
 </head>
 <body>
 	<div class="wrapper wrapper-decor wrapper-xh onoscdisable-hide" id="bars-wrap">
@@ -109,7 +110,7 @@
 						<button class="action-button" title="Очистить поле" data-act="clear"><i class="i-clear"></i></button>
 						<button class="action-button" title="Закрыть" data-act="close"><i class="i-x-large"></i></button>
 						<br>
-						<button class="action-button" title="Поделиться" data-act="share_pattern"><i class="i-cloud"></i></button>
+						<button class="action-button" title="Поделиться" data-act="share_pattern"><i class="i-share"></i></button>
 						<button class="action-button" title="Вернуть дефолтный паттерн" data-act="revert"><i class="i-zero"></i></button>
 					</div>
 					<br>
@@ -133,61 +134,9 @@
 					</div>
 				</div>
 				<br class="onshare-show">
-				<form class="uploadbox onshare-show" id="pattern-share">
-					<div class="panel-name">
-						<span class="onedit-hide ondelete-hide">Добавить паттерн</span>
-						<span class="onedit-show">
-							<span>Редактировать паттерн</span>
-							<span id="patternedit-id" class="title-id"></span>
-						</span>
-						<div class="ondelete-show">
-							<span class="delete-title">Удалить паттерн</span>
-							<span id="patterndelete-id" class="title-id"></span>
-						</div>
-					</div>
-					<div class="p-block">
-						<input type="text" placeholder="Имя паттерна (пожалуйста, короче)" class="odelete-hide txtinput validable filename ondelete-hide special-margins-1" data-tovalid="filename">
-						<br class="ondelete-hide">
-						<div class="delpassbox">
-							<i class="i-password password-reveal"></i>
-							<input type="password" class="txtinput delpass validable" placeholder="Пароль для удаления" data-tovalid="delpass">
-						</div>
-					</div>
-					<div class="p-block captchablock">
-						<img class="captcha" alt="Обновить капчу" width="150" height="30">
-						<br>
-						<input type="text" class="txtinput validable captchainput" data-tovalid="captcha"><br>
-					</div>
-					<div class="p-block ondelete-hide">
-						<button type="submit" class="big-button upload-button" title="Загрузить паттерн" disabled><i class="i-cloud big-icon"></i></button>
-					</div>
-					<div class="p-block ondelete-show">
-						<button type="submit" class="big-button upload-button btb-del" title="Удалить паттерн" disabled><i class="i-x-large big-icon"></i></button>
-					</div>
-					<br>
-					<div class="p-block ondelete-hide">
-						<label for="assoc_loop"><input class="oncheck-enable" data-element-toenable="#loop-toassoc" type="checkbox" name="assoc_loop" id="assoc_loop">Связать с лупом</label>
-						<select name="loop-toassoc" id="loop-toassoc" disabled><!-- Values to add dynamically --></select>
-						<button class="action-button flip-h" title="Указать луп" data-act="select_loop"><i class="i-select"></i></button>
-					</div>
-					<br class="foradmin-show ondelete-hide">
-					<div class="nm-block nm-full p-block datetime-block foradmin-show ondelete-hide">
-						<input type="date" id="pattern-date">	
-						<input type="time" step="1" id="pattern-time">
-						<select value="custom" name="pattern_section" id="pattern-section">
-							<option value="default">Default</option>
-							<option value="custom">Custom</option>
-						</select>
-						<br class="onedit-show">
-						<div class="p-block ondelete-hide nm-full onedit-show">
-							<label class="onedit-show" for="pattern_take_ownership"><input type="checkbox" name="take_ownership" id="pattern_take_ownership">Take ownership</label>
-						</div>
-					</div>
-					<br>
-				</form>
-			</div>
-			<div class="hijab">
-				<img class="spins" src="spinner.svg" height="78" width="78">
+				<div class="uploadbox onshare-show" id="pattern-share">
+					<input class="txtinput" type="text" id="share-string" onclick="select()">
+				</div>
 			</div>
 		</div>
 	</div>
@@ -231,84 +180,6 @@
 		</div>
 	</div>
 
-	<div class="panel-wrap uploadbox" id="loop-upload" style="display:none">
-		<div class="emsgwrap">
-			<div class="pop-message">
-				<span class="emsgbody"></span>
-				<i class="i-x-large close-button"></i>
-			</div>
-		</div>
-		<div class="panel">
-			<i class="i-x-large close-button panel-close"></i>
-			<form class="gets-hidden">
-				<div class="panel-name">
-					<span class="onedit-hide ondelete-hide">Загрузить луп</span>
-					<span class="onedit-show">
-						<span>Редактировать луп</span>
-						<span id="loopedit-id" class="title-id"></span>
-					</span>
-					<div class="ondelete-show">
-						<span class="delete-title">Удалить луп</span>
-						<span id="loopdelete-id" class="title-id"></span>
-					</div>
-				</div>
-				<div class="p-block ondelete-expand">
-					<input type="text" placeholder="Имя трека" class="txtinput validable filename ondelete-hide" data-tovalid="filename">
-					<br>
-					<div class="delpassbox">
-						<i class="i-password password-reveal"></i>
-						<input type="password" class="txtinput delpass validable" placeholder="Пароль для удаления" data-tovalid="delpass">
-					</div>
-				</div>
-				<div class="p-block ondelete-hide">
-					<button type="submit" class="big-button upload-button" title="Загрузить луп" disabled><i class="i-cloud big-icon"></i></button>
-				</div>
-				<br>
-				<div class="nm-block p-block nm-full ondelete-hide" id="userTresholdCorrection">
-					<label for="treshold">Корректировка порога срабатывания (<span class="indicator"></span>)</label><br>
-					<input type="range" name="tresholdCorrection" min="-0.3" max="0.3" step="0.01" value="0"><br/>
-				</div>
-				<div class="nm-block p-block nm-full ondelete-hide">
-					<button class="action-button" title="Указать паттерн" data-act="select_pattern"><i class="i-select"></i></button>
-					<label for="assoc_pattern"><input class="oncheck-enable" data-element-toenable="#pattern-toassoc" type="checkbox" name="assoc_pattern" id="assoc_pattern">Связать с паттерном</label>
-					<select name="pattern-toassoc" id="pattern-toassoc" disabled>
-					<!-- Values to add dynamically -->
-					</select>
-				</div>
-				<span class="foradmin-show ondelete-hide">
-					<div class="nm-block nm-full p-block datetime-block">
-						<input type="date" id="loop-date">	<input type="time" step="1" id="loop-time">
-					</div>
-					<div class="nm-block nm-full p-block datetime-block">
-						<select value="custom" name="loop_section" id="loop-section">
-							<option value="dead">Dead</option>
-							<option value="live">Live</option>
-							<option value="custom">Custom</option>
-						</select>
-						<input type="text" id="loop-swf" class="txtinput" name="swf" placeholder="link to SWF" style="margin-left: 10px">
-						<br>
-						<div class="nm-block nm-full p-block onedit-show">
-							<label for="loop_take_ownership"><input type="checkbox" name="take_ownership" id="loop_take_ownership">Take ownership</label>
-						</div>
-					</div>
-				</span>
-				<div class="captchablock">
-					<img class="captcha" alt="Обновить капчу" width="150" height="30">
-					<i class="i-right captcha-pointer"></i>
-					<input type="text" class="txtinput validable captchainput" data-tovalid="captcha"><br>
-				</div>
-				<br class="ondelete-show">
-				<div class="nm-block p-block nm-full ondelete-show panel-delete">
-					<button type="submit" class="big-text-btn btb-del">
-						<i class="i-x-small"></i> Удалить</a>
-					</button>
-				</div>
-			</form>
-			<div class="hijab">
-				<img src="spinner.svg" height="78" width="78">
-			</div>
-		</div>
-	</div>
 	<canvas id="bufferCanvas" style="display:none"></canvas>
 	<a href="#" id="bufferLink" style="display:none" download="pattern.png"></a>
 	
@@ -373,7 +244,6 @@
     </div>
 	</div>
 
-	
 	<script>
 	$('document').ready(readyset)
 	</script>
