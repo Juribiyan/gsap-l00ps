@@ -2,19 +2,22 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Løøps</title>
-	<link rel="stylesheet" href="font.css"></head>
+	<!-- <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />. --><!-- (for testing on IE on local environment; breaks style changing) -->
+	<title>Løøps 3.0</title>
+	<link rel="stylesheet" href="font.css">
 	<link rel="stylesheet" href="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.min.css" />
-	<link href="http://fonts.googleapis.com/css?family=Roboto:400,700,400italic,700italic&amp;subset=latin,cyrillic" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" href="style.css?v=2"></head>
+  <link rel="stylesheet" href="lib/ion.rangeSlider-2.1.7/css/ion.rangeSlider.css">
+  <link rel="stylesheet" href="lib/ion.rangeSlider-2.1.7/css/ion.rangeSlider.skinModernMod.css">
+  <link rel="stylesheet" href="style.css">
 	<script src="lib/lodash.js"></script>
 	<script src="lib/jquery.min.js"></script>
 	<script src="lib/tinycolor.js"></script>
 	<script src="lib/TweenMax.min.js"></script>
 	<script src="lib/jquery.gsap.min.js"></script>
 	<script src="lib/jscolor/jscolor.js"></script>
+  <script src="lib/ion.rangeSlider-2.1.7/js/ion-rangeSlider/ion.rangeSlider.min.js"></script>
 	<script src="lib/cheet.min.js"></script>
-	<script src="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.concat.min.js"></script>
+	<script src="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.concat.min.js?v=3.0.9"></script>
 	<script src="loops.js"></script>
 </head>
 <body>
@@ -54,7 +57,7 @@
 			<a title="Редактировать паттерн" href="#" onclick="Grid.enterPaintMode()" class="panel-opener"><i class="i-pattern-edit"></i></a>
 			<a href="#" id="playSwitcher" onclick="javascript:audio.play();return false;"><i class="i-play-big"></i></a>
 			<a title="Случайный луп"  href="#" id="playRandom" onclick="javascript:AllTracks.random();return false;"><i class="i-shuffle"></i></a>
-			<a title="Настройки визуализации" href="#" onclick="$('#nerdmode').slideToggle('fast')"><i class="i-tweaks"></i></a>
+			<a title="Настройки визуализации" href="#" onclick="toggleAnlzOpts()"><i class="i-tweaks"></i></a>
 			<a title="Библиотека лупов" href="#" onclick="$('#loop-library').toggleClass('open-lib');"><i class="i-note"></i></a>
 		</div>
 	</div>
@@ -187,41 +190,80 @@
 				</form>
 			</div>
 			<div class="hijab">
-				<img class="spins" src="spinner.svg" height="78" width="78">
+				<img src="spinner.svg" height="78" width="78">
 			</div>
 		</div>
 	</div>
 	
 	<div class="panel-wrap" id="nerdmode">
 		<div class="panel">
-			<div class="nm-block p-block" title="ХУЙ ПИЗДА ДЖИГУРДА">
-				<label for="treshold">Порог срабатывания (<span class="indicator"></span>)</label><br>
-				<input type="range" name="treshold" min="0.5" max="1" step="0.01">
+			<canvas id="samplecanvas" height="160"></canvas>
+			<div class="nm-block nm-full centered" id="frequency-range">
+				<label for="frequency_range">Частотный диапазон</label><br>
+				<input type="text" id="frequency_range" name="frequency_range" value="" />
 			</div>
-			<div class="nm-block p-block">
-				<label for="flashProbability">Вероятность срабатывания (<span class="indicator"></span>)</label><br>
-				<input type="range" name="flashProbability" min="0" max="1" step="0.01">
+			<div class="nm-block nm-full centered">
+				<label for="frequency_range">Динамический диапазон</label><br>
+				<input type="text" id="dynamic_range" name="dynamic_range" value="" />
 			</div>
-			<br>
-			<div class="nm-block p-block">
-				<label for="flashFuzziness">Степень рассеивания (<span class="indicator"></span>)</label><br>
-				<input type="range" name="flashFuzziness" min="0" max="1" step="0.01">
+      <br>
+      <div class="nm-block p-block" title="Сглаживание">
+				<label for="smoothing">Сглаживание</label><br>
+				<input type="text" id="smoothing" name="smoothing" value="" />
 			</div>
-			<div class="nm-block p-block">
-				<label for="fft_size">Размер БПФ (<span class="indicator"></span>)</label><br>
-				<input type="range" name="fft_size" min="5" max="15" step="1">
-			</div>
-			<br>
-			<div class="nm-block p-block">
-				<span>Область анализа</span><br>
-				<input type="radio" name="domain" value="time" id="rb-time"><label for="rb-time">Временная</label>
-				<input type="radio" name="domain" value="freq" id="rb-freq"><label for="rb-freq">Частотная</label>
-			</div>
-			<div class="nm-block p-block" id="smoothingBlock">
-				<label for="smoothing">Степень сглаживания (<span class="indicator"></span>)</label><br>
-				<input type="range" name="smoothing" min="0" max="1" step="0.01">
+			<div class="nm-block p-block" title="Сглаживание">
+				<label for="treshold">Порог</label><br>
+				<input type="text" id="treshold" name="treshold" value="" />
 			</div>
 			<br>
+			<div style="display:none">
+				<div class="nm-block p-block" title="Размер быстрого преобразования Фурье">
+					<label for="fft_size">Размер БПФ (<span class="indicator"></span>)</label><br>
+					<input type="range" name="fft_size" min="5" max="15" step="1">
+				</div>
+				<div class="nm-block p-block" title="Число отсчетов, задействованных в анализе">
+					<label for="numSamples">Кол-во отсчетов (<span class="indicator"></span>)</label><br>
+					<input type="range" name="numSamples" min="10" max="8192" step="1">
+				</div>
+				<br>
+				<div class="nm-block p-block" title="Порог срабатывания относительно среднего уровня для полосы">
+					<label for="relativeTreshold">Относительный порог (<span class="indicator"></span>)</label><br>
+					<input type="range" name="relativeTreshold" min="0.5" max="3" step="0.02">
+				</div>
+				<div class="nm-block p-block" title="Размер истории">
+					<label for="historySize">Размер истории (<span class="indicator"></span>)</label><br>
+					<input type="range" name="historySize" min="10" max="1000" step="1">
+				</div>
+				<br>
+				<div class="nm-block p-block" title="Сдвиг по частоте">
+					<label for="sampleOffset">Сдвиг по частоте (<span class="indicator"></span>)</label><br>
+					<input type="range" name="sampleOffset" min="0" max="1000" step="1">
+				</div>
+				<div class="nm-block p-block">
+					<span>Закон разбиения на полосы</span><br>
+					<input type="radio" name="distributionLaw" value="quadratic" id="distrlaw-quad"><label for="distrlaw-quad">Квадратичный</label>
+					<input type="radio" name="distributionLaw" value="linear" id="distrlaw-line"><label for="distrlaw-line">Линейный</label>
+				</div>
+				<br>
+				<div class="nm-block p-block" title="Скорость затухания">
+					<label for="decay">Скорость затухания (<span class="indicator"></span>)</label><br>
+					<input type="range" name="decay" min="0.1" max="1" step="0.01">
+				</div>
+				<div class="nm-block p-block" title="Уровень, при котором остаточный сигнал обращается в ноль">
+					<label for="inertiaLowcut">Уровень отсекания инерции (<span class="indicator"></span>)</label><br>
+					<input type="range" name="inertiaLowcut" min="0" max="1" step="0.01">
+				</div>
+				<br>
+				<div class="nm-block p-block" title="Параметр minDecibels WebAudio">
+					<label for="minDecibels">Нижний уровень сигнала (<span class="indicator"></span> дБ)</label><br>
+					<input type="range" name="minDecibels" min="-300" max="-10" step="1">
+				</div>
+				<div class="nm-block p-block" id="smoothingBlock" title="Степень сглаживания на уровне WebAudio">
+					<label for="smoothing">Степень сглаживания (<span class="indicator"></span>)</label><br>
+					<input type="range" name="smoothing" min="0" max="1" step="0.01">
+				</div>
+				<br>
+			</div>
 			<div class="nm-block p-block">
 				<input type="checkbox" id="osc-toggle" checked><label for="osc-toggle">Показывать осциллоскоп</label>
 			</div>
@@ -264,10 +306,6 @@
 					<button type="submit" class="big-button upload-button" title="Загрузить луп" disabled><i class="i-cloud big-icon"></i></button>
 				</div>
 				<br>
-				<div class="nm-block p-block nm-full ondelete-hide" id="userTresholdCorrection">
-					<label for="treshold">Корректировка порога срабатывания (<span class="indicator"></span>)</label><br>
-					<input type="range" name="tresholdCorrection" min="-0.3" max="0.3" step="0.01" value="0"><br/>
-				</div>
 				<div class="nm-block p-block nm-full ondelete-hide">
 					<button class="action-button" title="Указать паттерн" data-act="select_pattern"><i class="i-select"></i></button>
 					<label for="assoc_pattern"><input class="oncheck-enable" data-element-toenable="#pattern-toassoc" type="checkbox" name="assoc_pattern" id="assoc_pattern">Связать с паттерном</label>
@@ -372,8 +410,6 @@
       <div class="tab-contents tabgroup-patterns" id="custom-patterns"></div>
     </div>
 	</div>
-
-	
 	<script>
 	$('document').ready(readyset)
 	</script>

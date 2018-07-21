@@ -14,7 +14,7 @@ class postgres8_driver_ADOConnection extends ADOConnection
 	var $sysDate = "CURRENT_DATE";
 	var $sysTimeStamp = "CURRENT_TIMESTAMP";
 
-	function postgres8_driver_ADOConnection()
+	function __construct()
 	{
 		$this->dbtype = 'postgres8';
 		$this->dataProvider = 'postgres';
@@ -433,7 +433,7 @@ class postgres8_driver_ResultSet
 	* @param string $resultId
 	*/
 
-	function postgres8_driver_ResultSet( $resultId, $connectionId )
+	function __construct( $resultId, $connectionId )
 	{
 		$this->fields = array();
 		$this->connectionId = $connectionId;

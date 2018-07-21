@@ -1,4 +1,4 @@
-<?
+<?php
 session_start();
 
 require 'common_config.php';
@@ -30,10 +30,51 @@ $pattern_string = $_POST['pattern_string'];
 if(empty($_POST['delpass']))
 	retreat('bad_input', "Пароль не может быть пустым.");
 
-/* Check treshold correction */
-$treshold_correction = (float)$_POST['treshold_correction'];
-if($treshold_correction > MAX_TRESHC || $treshold_correction < MIN_TRESHC)
-	retreat('bad_treshold', 'Превышен диапазон корректировки порога.');
+/* ============== Check analyzer settings ============== */
+// Frequency range
+$freq = explode(',', $_POST['freq']);
+if (
+	!((int)($freq[0]) || $freq[0]=='0')
+	||
+	!((int)($freq[1]) || $freq[1]=='0')
+	||
+	$freq[1] <= $freq[0]
+	||
+	$freq[0] < 0
+	||
+	$freq[1] > 24000
+) retreat('bad_freq', 'Неверно задан частотный диапазон.');
+// Dynamic range
+$db = explode(',', $_POST['db']);
+if (
+	!((int)($db[0]) || $db[0]=='0')
+	||
+	!((int)($db[1]) || $db[1]=='0')
+	||
+	$db[1] <= $db[0]
+	||
+	$db[0] < -200
+	||
+	$db[1] > 0
+) retreat('bad_db', 'Неверно задан динамический диапазон.');
+// Smoothing
+$smoothing = $_POST['smoothing'];
+if (
+	!((float)$smoothing || $smoothing=='0')
+	||
+	$smoothing > 1
+	||
+	$smoothing < 0
+) retreat('bad_smoothing', 'Неверно задано сглаживание.');
+// Treshold
+$treshold = $_POST['treshold'];
+if (
+	!(float)$treshold
+	||
+	$treshold > 3
+	||
+	$treshold < 0.5
+) retreat('bad_treshold', 'Неверно задан порог.');
 
 /* Check captcha */
 if(!isset($_POST['captcha']))
@@ -122,27 +163,52 @@ if($_POST['action'] == "add" && $_POST['datatype'] == 'loop') {
 	/* Anal probe */
 	$fileinfo = loop_probe();
 
-	$fields = explode(', ', '`section`, `name`, `delpass`, `duration`, `original_hash`, `mp3_hash`, `ogg_hash`, `treshold_correction`');
-	$qms = explode(', ', '?, ?, ?, ?, ?, ?, ?, ?');
-	$values = array($section, $name, $pass, $fileinfo["duration"], $original_hash, $fileinfo["mp3_hash"], $fileinfo["ogg_hash"], $treshold_correction);
-
+	/* Prepare insert */
+	$fields = array(
+		'section',
+		'name',
+		'delpass',
+		'duration',
+		'original_hash',
+		'mp3_hash',
+		'ogg_hash',
+		'freq',
+		'db',
+		'smoothing',
+		'treshold'
+	);
+	$qms = '';
+	$values = array(
+		$section,
+		$name,
+		$pass,
+		$fileinfo["duration"],
+		$original_hash,
+		$fileinfo["mp3_hash"],
+		$fileinfo["ogg_hash"],
+		implode('~', $freq),
+		implode('~', $db),
+		$smoothing,
+		$treshold
+	);
 	if($associated_pattern) {
-		$fields []= '`associated_pattern`';
-		$qms []= '?';
+		$fields []= 'associated_pattern';
 		$values []= $associated_pattern;
 	}
 	if($is_admin) {
 		if(isset($date)) {
-			$fields []= '`date`';
-			$qms []= '?';
+			$fields []= 'date';
 			$values []= $date;
 		}
 		if(isset($swf)) {
-			$fields []= '`swf`';
-			$qms []= '?';
+			$fields []= 'swf';
 			$values []= $swf;
 		}
 	}
+	foreach ($fields as &$f) { 
+		$f = "`$f`"; 
+		$qms []= '?';
+	} unset($f);
 
 	/* Insert entry into DB */
 	$insert_result = $tc_db->Execute('INSERT INTO `'.LOOPS_DBNAME.'` ('.implode(', ', $fields).') VALUES ('.implode(', ', $qms).')', $values);
@@ -162,7 +228,10 @@ if($_POST['action'] == "add" && $_POST['datatype'] == 'loop') {
 			section => $section,
 			duration => $fileinfo["duration"],
 			date => $date,
-			tresholdCorrection => $treshold_correction,
+			freq => $freq,
+			db => $db,
+			smoothing => $smoothing,
+			treshold => $treshold,
 			associated_pattern => $associated_pattern,
 			swf => $swf ? $swf : null,
 			id => $id
@@ -181,6 +250,7 @@ function loop_probe() {
 	$x=1;  exec('ffprobe -v quiet -i '.$loop4shell.' -print_format json -show_format 2>&1', $probe, $x);
 	if($x != 0)
 		retreat('transcode_error', 'FFMprobe выдал ошибку при зондировании файла');
+	var_dump($probe);
 	$result = json_decode(implode('', $probe), true);
 	if(!$result)
 		retreat('transcode_error', 'FFProbe не может обработать файл.');
@@ -261,11 +331,32 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'loop') {
 			$values [] = $name;
 			$changes []= 'Имя трека «'.$loop_toedit['name'].'» изменено на «'.$name.'»';
 		}
-		if($loop_toedit['treshold_correction'] != $treshold_correction) {
-			$keys []= 'treshold_correction';
-			$values []= $treshold_correction;
-			$changes []= 'Уровень порога изменен с '.$loop_toedit['treshold_correction'].' на '.$treshold_correction;
+
+		$freq_i = implode('~', $freq);
+		if($loop_toedit['freq'] != $freq_i) {
+			$keys []= 'freq';
+			$values []= $freq_i;
+			$freq_old = explode('~', $loop_toedit['freq']);
+			$changes []= 'Частотный диапазон изменен с ['.$freq_old[0].'...'.$freq_old[1].'] на ['.$freq[0].'...'.$freq[1].']';
 		}
+		$db_i = implode('~', $db);
+		if($loop_toedit['db'] != $db_i) {
+			$keys []= 'db';
+			$values []= $db_i;
+			$db_old = explode('~', $loop_toedit['db']);
+			$changes []= 'Динамический диапазон изменен с ['.$db_old[0].'...'.$db_old[1].'] на ['.$db[0].'...'.$db[1].']';
+		}
+		if($loop_toedit['smoothing'] != $smoothing) {
+			$keys []= 'smoothing';
+			$values []= $smoothing;
+			$changes []= 'Степень сглаживания изменена с '.$loop_toedit['smoothing'].' на '.$smoothing;
+		}
+		if($loop_toedit['treshold'] != $treshold) {
+			$keys []= 'treshold';
+			$values []= $treshold;
+			$changes []= 'Уровень порога изменен с '.$loop_toedit['treshold'].' на '.$treshold;
+		}
+
 		if($associated_pattern && $loop_toedit['associated_pattern'] != $associated_pattern) {
 			$pattern_exists = $tc_db->GetOne('SELECT `name` FROM `'.PATTERNS_DBNAME.'` WHERE `id`=?', array($associated_pattern));
 			if(!$pattern_exists) {
@@ -312,9 +403,12 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'loop') {
 			if(!$insert_result || $tc_db->Affected_Rows() < 1)
 				retreat('mysql_error', 'Ошибка при записи в базу данных');
 
-			$loop_toreflect = $tc_db->GetAll("SELECT `section`, `name`, `date`, `duration`, `treshold_correction`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE `original_hash`=?", array($ohash));
-			if($loop_toreflect && !empty($loop_toreflect))
+			$loop_toreflect = $tc_db->GetAll("SELECT `section`, `name`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE `original_hash`=?", array($ohash));
+			if($loop_toreflect && !empty($loop_toreflect)) {
 				$loop_toreflect = $loop_toreflect[0];
+				$loop_toreflect['freq'] = explode('~', $loop_toreflect['freq']);
+				$loop_toreflect['db'] = explode('~', $loop_toreflect['db']);
+			}
 			else
 				retreat('mysql_error', 'Ошибка при записи в базу данных');
 
@@ -393,7 +487,7 @@ function update_loops_json_file($section) {
 
 	$sect_condition = ($section == 'custom') ? "`section`='custom'" : "`section`='dead' OR `section`='live'";
 	$json_filename = ($section == 'custom') ? 'custom_loops.json' : 'default_loops.json';
-	$alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `treshold_correction`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
+	$alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
 	$tracklist = fopen($json_filename, 'w');
 	fwrite($tracklist, json_encode($alltracks));
 	fclose($tracklist);

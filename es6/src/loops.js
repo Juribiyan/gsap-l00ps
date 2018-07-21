@@ -1,3 +1,5 @@
+"use strict";
+
 var defaultPattern = "__JJJJJJJJ__|_JJJJJJJJJJ_|JJjjjjjjjJJJ|JJjjjjjjJJJJ|JJjjjjjJJjJJ|JJjjjjjJJjJJ|JJjjjjJJjjJJ|JJjjjjJJjjJJ|JJjjjJJjjjJJ|JJjjjJJjjjJJ|JJjjJJjjjjJJ|JJjjJJjjjjJJ|JJjJJjjjjjJJ|JJjJJjjjjjJJ|JJJJjjjjjjJJ|JJJjjjjjjjJJ|_JJJJJJJJJJ_|__JJJJJJJJ__";
 
 var urlprefix = "loops/";
@@ -6,27 +8,49 @@ var fileFormat = (function() {
 	return (typeof testAudio.canPlayType === "function" && testAudio.canPlayType("audio/ogg") !== "")
 })() ? 'ogg' : 'mp3';
 
-var hashData = {pattern: null, style: null, osc: null};
+var conf = {
+	barWidth: 850,
+	barHeight: 240,
+	fft_size: 1024,
+	absoluteTreshold: 0.5,
+	historySize: 20,
+	distributionLaw: 'quadratic',
+	colorAlphaTreshold: 0.5,
+	association: false,
+	osc: true,
+  topOffset: 70,
+  lightWave: '#eee',
+  darkWave: '#999'
+};
+
+// https://github.com/rafrex/detect-passive-events
+const detectPassiveEvents = {
+  update() {
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      let passive = false;
+      const options = Object.defineProperty({}, 'passive', {
+        get() { passive = true; },
+      });
+      const noop = () => {};
+      window.addEventListener('testPassiveEventSupport', noop, options);
+      window.removeEventListener('testPassiveEventSupport', noop, options);
+      detectPassiveEvents.hasSupport = passive;
+    }
+  },
+};
+detectPassiveEvents.update();
+
+var $canvas, drawContext, bufferCanvas, bufferContext;
 
 function readyset() {
+	channel.init()
 	$canvas = $('#bars');
 	drawContext = $canvas[0].getContext('2d');
 
 	bufferCanvas = $('#bufferCanvas')[0];
 	bufferContext = bufferCanvas.getContext('2d');
 	
-	
-	if(document.location.hash) {
-		var shared = decodeURIComponent(document.location.hash.split('#')[1]).split(';');
-		if(shared.length === 3) {
-			hashData = {
-				pattern: shared[0],
-				style: shared[1],
-				osc: (shared[2] == 0 ? 'off' : shared[2])
-			}
-		}
-		document.location.hash = '';
-	}
+	ranges.init()
 	
 	Grid.init('#nullgrid');
 
@@ -68,45 +92,6 @@ function readyset() {
 		$('[data-tool="draw"]').click();
 	});
 
-	// nerdmode inputs
-	updateRanges();
-	$('.nm-block input[type=range]').on('input', function() {
-		var prop = $(this).attr('name');
-		if(prop === 'fft_size') {
-			conf[prop] = Math.pow(2, $(this).val());
-			try {
-				visualizer.analyser.fftSize = conf.fft_size;
-				$('label[for=fft_size] .indicator').removeClass('illegal')
-			}
-			catch(e) {
-				$('label[for=fft_size] .indicator').addClass('illegal')
-			}
-		}
-		else
-			conf[prop] = +$(this).val();
-		updateRanges(prop);
-	});
-	$('.nm-block input[name="domain"]').change(function() {
-		conf.domain = $(this).val();
-		if(conf.domain === 'time') {
-			$('#smoothingBlock').addClass('disabled');
-			var $range = $('input[name=treshold]');	
-			if($range.val() < 0.5) {
-				conf.treshold = 0.5;
-				updateRanges('treshold')
-			}
-			$range.attr('min', 0.5);
-		}
-		else {
-			$('#smoothingBlock').removeClass('disabled');
-			$('input[name=treshold]').attr('min', 0);
-		}
-	})
-
-	$('#enterNerdmode').click(function() {
-		$('#nerdmode').slideToggle('fast');
-	})
-
 	document.querySelector('body').addEventListener('dragover', handleDragOver, false);
 	document.querySelector('body').addEventListener('drop', handleFileDrop, false);
 
@@ -120,10 +105,195 @@ function readyset() {
 		})
 	}, false)
 
+	$.getJSON('upload.php?check')
+	.done(function(data) {
+		upconf = data;
+	})
+	.fail(function(err) {
+		console.log(err)
+	});
+
+	/*Password reveal*/
+	$('.password-reveal').on('mousedown', function() {
+		$(this).parent().find('.delpass').attr('type', 'text')
+	})
+	.on('mouseleave mouseup', function() {
+		$(this).parent().find('.delpass').attr('type', 'password')
+	});
+
+	/* Input validation */
+	$('.validable').on('input', function() {
+		if(validations[$(this).data('tovalid')]($(this).val())) 
+			$(this).removeClass('invalid')
+		else 
+			$(this).addClass('invalid');
+		validateForm($(this).parents('form'), true);
+	});
+
+	/* Captcha update */
+	$('.captcha').click(function(ev) {
+		updateCaptcha($(this).parents('.captchablock'), (ev.ctrlKey || ev.altKey));
+	})
+
+	/* Error box close */
+	$('.pop-message .i-x-large').click(errBox.closeWithBtn);
+
+	/* Loop panel close */
+	$('#loop-upload .panel-close').click(loopEditor.hide.bind(loopEditor));
+
+	/* Loop upload form */
+	$('#loop-upload form').on('submit', function(ev) {
+		ev.preventDefault();
+		setLineHeightAsParentHeight($('#loop-upload .hijab'));
+		$('#loop-upload .panel').addClass('p-busy');
+		var action = 'add';
+		if($('#loop-upload form').hasClass('action-edit')) 
+			action = 'edit';
+		if($('#loop-upload form').hasClass('action-delete')) 
+			action = 'delete';
+		
+		/* Make XHR2 */
+		var fd = new FormData();
+		fd.append('action', action);
+		fd.append('datatype', 'loop');
+		fd.append('delpass', $("#loop-upload .delpass").val());
+		fd.append('captcha', $("#loop-upload .captchainput").val());
+
+		if(is_admin)
+			fd.append('is_admin', 1);
+
+		if(action !== 'delete') {
+			fd.append('name', $("#loop-upload .filename").val());
+			;['freq', 'db', 'smoothing', 'treshold'].forEach(prop => fd.append(prop, ranges.current[prop]))
+
+			if($('#assoc_pattern').is(':checked'))
+				fd.append('associated_pattern', $('#pattern-toassoc').val());
+
+			if(is_admin) {
+				fd.append('is_admin', 1);
+				var date = $('#loop-date').val();
+				if(date) {
+					var time = $('#loop-time').val() || '00:00:00';
+					date = date + ' ' + time;
+				}
+				if(date)
+					fd.append('date', date);
+				if($("#loop-swf").val())
+					fd.append('swf', $("#loop-swf").val());
+				fd.append('section', $("#loop-section").val());
+			}
+		}
+		
+		if(action === 'add') {
+			if(!currentCustomTrack.blob) {
+				errBox.pop($('#loop-upload'), "Файл отсутствует");
+				$('#loop-upload .panel').removeClass('p-busy');
+				return 
+			}
+			if(currentCustomTrack.blob.size / 1024 > upconf.max_loop_fszkb) {
+				$('#loop-upload .panel').removeClass('p-busy');
+				errBox.pop($('#loop-upload'), 'Превышен максимальный размер файла ('+upconf.max_loop_fszkb/1024+' МБ).');
+				return
+			}
+			fd.append('loop', currentCustomTrack.blob);
+		}
+
+		else {
+			fd.append('original_hash', loopEditor.rawData.original_hash);
+		}
+
+		if(action === 'edit')
+			fd.append('take_ownership', $('#loop_take_ownership').is(':checked'));
+					
+		var request = new XMLHttpRequest();
+		request.open("POST", "upload.php");
+		request.send(fd);
+
+		request.onload = function(e) {
+			$('#loop-upload .panel').removeClass('p-busy');
+			if(this.status == 200) {
+				try {
+					var res = JSON.parse(this.response);
+					if(res.error) {
+						if(res.errtype === 'prompt_edit') {
+							try {
+								var data = JSON.parse(res.extra_data);
+								loopEditor.prepareEdit(data);
+								errBox.pop($('#loop-upload'), _.escape(res.msg)+' <a href="javascript:loopEditor.edit();">Отредактировать луп «'+_.escape(data.name)+'»</a>?', 'prompt', 'raw');
+							}
+							catch(e) {
+								errBox.pop($('#loop-upload'), 'Неожиданный ответ сервера. Подробности в консоли.');
+								console.log(e);
+							}
+						}
+						else {
+							errBox.pop($('#loop-upload'), res.msg);
+						}
+					}
+					else {
+						var _lib = (res.loop.section !== 'custom') ? 'default' : 'custom';
+						// save password
+						var dp = $("#loop-upload .delpass").val();
+						localStorage["loop_pass"] = dp;
+						if(!localStorage["pattern_pass"]) {
+							$("#pattern-share .delpass").val(dp);
+							localStorage["pattern_pass"] = dp;
+						}
+						/* LOOP XHR RESULTS */ 
+						if(res.success === 'loop_add' && res.hasOwnProperty('loop')) {
+							loopLibs[_lib].add(res.loop);
+							loopEditor.hide();
+						}
+						if(res.success === 'loop_edit') {
+							var lib_move = false;
+							if(res.loop.hasOwnProperty('section_from'))  {
+								var lib_from = (res.loop.section_from !== 'custom') ? 'default' : 'custom';
+								if(lib_from !== _lib) 
+									lib_move = true;
+							}
+							if(lib_move) {
+								loopLibs[lib_from].del(res.loop.original_hash, res.loop.section_from);
+								loopLibs[_lib].add(res.loop);
+							}
+							else
+								loopLibs[_lib].edit(res.loop);
+
+							_.each(res.changes, function(item, ix) {res.changes[ix] = _.escape(item)});
+							errBox.pop($('#loop-upload'), res.changes.join(';<br>') + '.', 'success', 'raw');
+							loopEditor.unedit();
+						}
+						if(res.success === 'loop_delete') {
+							loopLibs[_lib].del(res.loop.original_hash, res.loop.section);
+							errBox.pop($('#loop-upload'), "Луп удален.", 'success');
+							loopEditor.undel();
+						}
+
+						$('#loop-library').addClass('open-lib');
+						$('#ltab-'+_lib).click();
+
+						$("#loop-upload .filename").val('').trigger('input');
+					}
+				}
+				catch(e) {
+					if(e.name == 'SyntaxError') {
+						errBox.pop($('#loop-upload'), 'Неожиданный ответ сервера. Подробности в консоли.');
+						console.error(this.response);
+					}
+					else throw e;
+				}
+				updateCaptcha($("#loop-upload .captchablock"));
+			}
+			else {
+				errBox.pop($('#loop-upload'), 'Ошибка XHR. Подробности в консоли.');
+				console.error(e);
+			}
+		}
+	});
+
 	/* Loop library */
 	$.getJSON('custom_loops.json?'+Math.random())
 	.done(function(data) {
-		loopLibs.custom = new TrackList(data, '#custom-loops', 'custom', true, $('#ltab-custom i.sorter'), 'date', 'desc', false, $('#ltab-custom i.play-enabler'));
+		loopLibs.custom = new TrackList(data, '#custom-loops', 'custom', true, $('#ltab-custom i.sorter'), 'date', 'desc', true, $('#ltab-custom i.play-enabler'));
 	})
 	.fail(console.error);
 	$.getJSON('default_loops.json?'+Math.random())
@@ -187,8 +357,8 @@ function readyset() {
 	/* track play on click */
 	$('#loop-library')
 	.on('click', '.track .i-play', function() {
-		var hash = $(this).parents('.track').data('hash')		// unique hashname of the track
-		, libID = $(this).parents('.tracklist-section').data('id');		//library ID
+		var hash = $(this).parents('.track').data('hash')       // unique hashname of the track
+		, libID = $(this).parents('.tracklist-section').data('id');     //library ID
 		loopLibs[libID].playTrackByHash(hash);
 	}) /* track download menu */
 	.on('click', '.track-options .i-download-menu', function(ev) {
@@ -196,8 +366,21 @@ function readyset() {
 		$('.track').removeClass('dl-track ed-track')
 		$(this).parents('.track').addClass('dl-track')
 	})
+	.on('click', '.track-options .i-burger', function(ev) {
+		ev.stopPropagation();
+		$('.track').removeClass('dl-track ed-track')
+		$(this).parents('.track').addClass('ed-track')
+	})
 	.on('click', '.track-name', function(ev) {
 		$('.track').removeClass('dl-track ed-track')
+	})
+	.on('click', '.track', function(ev) {
+		if($(this).parents('.library').hasClass('select-mode')) {
+			ev.stopPropagation();
+			var hash = $(this).data('hash');
+			if($(this).parents('.library').hasClass('select-mode'))
+				$('#loop-toassoc').val(hash);
+		}
 	});
 
 	/* track search (Jets.js method) */
@@ -224,30 +407,182 @@ function readyset() {
 			injector.inject('pattern-search', '.search-active#pattern-library .pattern { display:none; }');
 	}).trigger('input');
 
+	/* cancel loop editor */
+	$('#unedit-loop').click(loopEditor.unedit.bind(loopEditor));
+
 	$('.oncheck-enable').change(function() {
 		$($(this).data('element-toenable')).attr('disabled', !this.checked);
 	})
+
+	// track menu
+	$('#loop-library')
+	.on('click', '.dlb-edit', function() {
+		var $track = $(this).parents('.track')
+		, hash = $track.data('hash')+''
+		, lib = $track.parents('.tabgroup-loops').data('lib')
+		, trackData = _.find(loopLibs[lib].flatList, {original_hash: hash});
+		if(trackData)
+			loopEditor.prepareEdit(trackData, true);
+	})
+	.on('click', '.dlb-delete', function() {
+		var $track = $(this).parents('.track')
+		, hash = $track.data('hash')
+		, lib = $track.parents('.tabgroup-loops').data('lib')
+		, trackData = _.find(loopLibs[lib].flatList, {original_hash: hash});
+		if(trackData)
+			loopEditor.del(trackData, true);
+		/*loopEditor.del(hash);*/
+	});
+
 	/* Pattern applying and menu */
 	$('#pattern-library')
 	.on('click', '.pattern-name', function() {
 		var libID = $(this).parent().data('lib')
 		, patternID = $(this).parent().data('id');
-		patternLibs[libID].applyPatternByID(patternID);
-	});
+
+		if($(this).parents('.library').hasClass('select-mode')) 
+			$('#pattern-toassoc').val(patternID);
+		else
+			patternLibs[libID].applyPatternByID(patternID);
+	})
+	.on('click', '.i-edit', function() {
+		var $pattern = $(this).parents('.pattern')
+		, id = $pattern.data('id')
+		, lib = $pattern.data('lib')
+		, patternData = _.find(patternLibs[lib].list, {id: id});
+		if(patternData) 
+			patternEditor.edit(patternData);
+	})
+	.on('click', '.pattern .i-x-small', function() {
+		var $pattern = $(this).parents('.pattern')
+		, id = $pattern.data('id')
+		, lib = $pattern.data('lib')
+		, patternData = _.find(patternLibs[lib].list, {id: id});
+		if(patternData) 
+			patternEditor.del(patternData);
+	})
+
+	/* Pattern share form */
+	$('form#pattern-share').on('submit', function(ev) {
+		ev.preventDefault();
+		setLineHeightAsParentHeight($('#editmode .hijab'));
+		$('#editmode .panel').addClass('p-busy');
+		var action = 'add';
+		if($('#pattern-share').hasClass('action-edit')) 
+			action = 'edit';
+		if($('#pattern-share').hasClass('action-delete')) 
+			action = 'delete';
+
+		var fd = new FormData();
+		fd.append('action', action);
+		fd.append('datatype', 'pattern');
+		fd.append('delpass', $("#pattern-share .delpass").val());
+		fd.append('captcha', $("#pattern-share .captchainput").val());
+
+		if(is_admin)
+			fd.append('is_admin', 1);
+
+		if(action !== 'delete') {
+			fd.append('name', $("#pattern-share .filename").val());
+			fd.append('pattern_string', Grid.getPattern());
+
+			fd.append('style', $('#cell-style').val());
+			fd.append('osc', ($('#osc-sel').val() !== 'off') ? $('#osc-color').val() : 'off')
+
+			if($('#assoc_loop').is(':checked'))
+				fd.append('associated_loop', $('#loop-toassoc').val());
+
+			if(is_admin) {
+				fd.append('is_admin', 1);
+				var date = $('#pattern-date').val();
+				if(date) {
+					var time = $('#pattern-time').val() || '00:00:00';
+					date = date + ' ' + time
+				}
+				if(date)
+					fd.append('date', date);
+				fd.append('section', $("#pattern-section").val());
+			}
+		}
+
+		if(action !== 'add') {
+			fd.append('pattern_id', patternEditor.currentID);
+		}
+
+		var request = new XMLHttpRequest();
+		request.open("POST", "upload.php");
+		request.send(fd);
+
+		request.onload = function(e) {
+			$('#editmode .panel').removeClass('p-busy');
+			if(this.status == 200) {
+				try {
+					var res = JSON.parse(this.response);
+					if(res.error) {
+						errBox.pop($('#editmode'), res.msg);
+					}
+					else {
+						// save password
+						var dp = $("#pattern-share .delpass").val();
+						localStorage["pattern_pass"] = dp;
+						if(!localStorage["loop_pass"]) {
+							$("#loop-upload .delpass").val(dp);
+							localStorage["loop_pass"] = dp;
+						}
+
+						if(res.success === 'pattern_add') {
+							patternLibs[res.pattern.section].add(res.pattern);
+							// patternEditor.hide();
+						}
+						if(res.success === 'pattern_edit') {
+							var lib_from = res.pattern.section_from || false;
+							if(lib_from) {
+								patternLibs[lib_from].del(res.pattern.id);
+								patternLibs[res.pattern.section].add(res.pattern);
+							}
+							else
+								patternLibs[res.pattern.section].edit(res.pattern);
+							_.each(res.changes, function(item, ix) {res.changes[ix] = _.escape(item)});
+							errBox.pop($('#editmode'), res.changes.join(';<br>'), 'success', 'raw');
+							patternEditor.unedit();
+						}
+						if(res.success === 'pattern_delete') {
+							patternLibs[res.pattern.section].del(res.pattern.id);
+							errBox.pop($('#editmode'), "Паттерн удален.", 'success');
+							patternEditor.undel();
+						}
+						$('#pattern-library').addClass('open-lib');
+						$('#ptab-'+res.pattern.section).click();
+						$("#loop-upload .filename").val('').trigger('input');
+					}
+				}
+				catch(e) {
+					if(e.name == 'SyntaxError') {
+						errBox.pop($('#editmode'), 'Неожиданный ответ сервера. Подробности в консоли.');
+						console.error(this.response);
+					}
+					else throw e;
+				}
+				updateCaptcha($("#pattern-share .captchablock"));
+			}
+			else {
+				errBox.pop($('#editmode'), 'Ошибка XHR. Подробности в консоли.');
+				console.error(e);
+			}
+		}
+	})
 
 	/*toggle osc and assoc*/
 	if(localStorage['loops_association'])
 		try {
 			conf.association = JSON.parse(localStorage['loops_association']);
-			if(!conf.association)
-				$('#assoc-toggle')[0].checked = false;
+			$('#assoc-toggle')[0].checked = conf.association;
 		}
 		catch(e) {
 			throw e;
-			localStorage['loops_association'] = true;
+			localStorage['loops_association'] = false;
 		}
 	$('#assoc-toggle').change(function() {
-		console.log($(this)[0].checked)
 		conf.association = localStorage['loops_association'] = $(this)[0].checked;
 	});
 	if(localStorage['osc_enabled'])
@@ -299,55 +634,253 @@ function readyset() {
 		if(val === 'custom')
 			$('#osc-color').attr('disabled', false);
 	})
+
+	// some local storage shit
+	$("#loop-upload .delpass").val(localStorage["loop_pass"] || '').trigger('input');
+	$("#pattern-share .delpass").val(localStorage["pattern_pass"] || '').trigger('input');
 }
 
 var injector = {
   inject: function(alias, css) {
-    var head = document.head || document.getElementsByTagName('head')[0]
-      , style = document.createElement('style');
-    style.type = 'text/css';
-    style.id = 'injector:' + alias;
-    if (style.styleSheet) {
-      style.styleSheet.cssText = css;
-    } else {
-      style.appendChild(document.createTextNode(css));
-    }
-    head.appendChild(style);
+		var head = document.head || document.getElementsByTagName('head')[0]
+		  , style = document.createElement('style');
+		style.type = 'text/css';
+		style.id = 'injector:' + alias;
+		if (style.styleSheet) {
+		  style.styleSheet.cssText = css;
+		} else {
+		  style.appendChild(document.createTextNode(css));
+		}
+		head.appendChild(style);
   },
   remove: function(alias) {
-  	var style = document.getElementById('injector:' + alias);
-  	if(style) {
-  		var head = document.head || document.getElementsByTagName('head')[0];
-  		if(head)
-  			head.removeChild(document.getElementById('injector:' + alias));
-  	}
+		var style = document.getElementById('injector:' + alias);
+		if(style) {
+			var head = document.head || document.getElementsByTagName('head')[0];
+			if(head)
+				head.removeChild(document.getElementById('injector:' + alias));
+		}
   }
 }
 
 var loopLibs = {}, patternLibs = {};
 
-function updateRanges(name) {
-	var nameSel = (typeof name === "undefined") ? '' : '[name="'+name+'"]';
-	if(nameSel !== 'domain')
-		$('input[type=range]'+nameSel).each(function() {
-			var prop = $(this).attr('name');
-			if(prop === 'fft_size') 
-				$(this).val(Math.log2(conf[prop]));
-			else 
-				$(this).val(conf[prop]);
-			var val = ((prop === 'tresholdCorrection' && conf[prop] > 0) ? '+' : '')+conf[prop];
-			$(this).parent().find('.indicator').text(val);
-		});
-	if(nameSel === 'domain' || nameSel === '') {
-		$('#rb-'+conf.domain).attr('checked', 'checked');
-		if(conf.domain === 'time') 
-			$('#smoothingBlock').addClass('disabled')
-		else 
-			$('#smoothingBlock').removeClass('disabled')
+var errBox = {
+	pop: function($parent, message, msgType, raw) {
+		if(typeof msgType === "undefined") msgType = "error";
+		if(typeof raw === "undefined" || raw !== 'raw') raw = false;
+		let $errorbox = $parent.find('.emsgwrap');
+		if(raw)
+			$errorbox.find('.emsgbody').html(message);
+		else
+			$errorbox.find('.emsgbody').text(message);
+		$errorbox.find('.pop-message').removeClass('emsg-error emsg-prompt emsg-success').addClass('emsg-'+msgType);
+		$errorbox.css({visibility: 'visible'});
+		$errorbox.animate({
+		  opacity: 1,
+		  top: '-'+($errorbox.height()-20)+'px'
+		}, 200);
+		return $errorbox;
+	},
+	closeWithBtn: function(ev) {
+		ev.preventDefault();
+		errBox.off($(this).parents('.emsgwrap'))
+	},
+	off: function($parent) {
+		$parent.animate({opacity: '0'}, 200, function() {
+			$parent.css({
+				visibility: 'hidden',
+				top: '0px'
+			})
+		})
 	}
-};
+}
 
-var $canvas, drawContext;
+function popError($parent, message) {
+	$errorbox = $parent.find('.emsgwrap');
+	$errorbox.find('.emsgbody').html(message);
+	$errorbox.css({visibility: 'visible'});
+	$errorbox.animate({
+	  opacity: 1,
+	  top: '-'+($errorbox.height()-20)+'px'
+	}, 400);
+}
+
+function updateCaptcha($parent, switch_lang=false) {
+	$parent.find('img.captcha').attr('src', 'captcha/captcha.php?color=200,200,200&'+Math.random()+(switch_lang ? '&switch' : ''));
+	$parent.find('input.captchainput').val('').trigger('input');
+}
+
+var loopEditor = {
+	visible: false,
+	state: 'add',
+	prepareEdit: function(data, immed) {
+		this.rawData = data;
+		if(typeof immed !== 'undefined' && immed)
+			this.edit();
+	},
+	add: function() {
+		this.unedit();
+		this.undel();
+		this.show();
+		errBox.off($('#loop-upload .emsgwrap'));
+	},
+	edit: function() {
+		this.undel();
+		this.state = 'edit'
+		errBox.off($('#loop-upload .emsgwrap'));
+		$('#loop-upload form').addClass('action-edit');
+		$('#loopedit-id').text(_.trunc(this.rawData.name, 18));
+		$('#loop-upload .filename').val(this.rawData.name);
+		/*$('#loop-upload input[name=tresholdCorrection]')
+		.val(this.rawData.treshold_correction).trigger('input');*/
+		
+		let $datetime = this.rawData.date.split(' ');
+		$('#loop-date').val($datetime[0]);
+		$('#loop-time').val($datetime[1]);
+		$('#loop-section').val(this.rawData.section);
+		$('#loop-swf').val(this.rawData.swf);
+
+		if(this.rawData.associated_loop) {
+			$('#pattern-toassoc').val(this.rawData.associated_pattern);
+			$('#assoc_pattern')[0].checked = true;
+		}
+		else 
+			$('#assoc_pattern')[0].checked = false;
+		$('#assoc_pattern').trigger('change');
+		
+		this.show();        
+	},
+	unedit: function() {
+		if(this.state !== 'edit') return;
+		this.state = 'add';
+		$('#loop-upload form').removeClass('action-edit');
+	},
+	del: function(loop) {
+		this.rawData = loop;
+		this.unedit();
+		this.state = 'delete';
+		$('#loopdelete-id').text(_.trunc(loop.name, 40));
+		$('#loop-upload form').addClass('action-delete');
+		this.show();
+	},
+	undel: function() {
+		if(this.state !== 'delete') return;
+		this.state = 'add';
+		$('#loop-upload form').removeClass('action-delete');
+	},
+	show: function() {
+		$('#loop-upload .validable').trigger('input');
+		if(this.visible) return;
+		$('#loop-upload .captcha').attr('src', 'captcha/captcha.php?color=200,200,200&'+Math.random());
+		$('#loop-upload').slideDown('fast');
+		this.visible = true;
+	},
+	hide: function() {
+		//return here
+		if(!this.visible) return;
+		errBox.off($('#loop-upload .emsgwrap'));
+		$('#loop-upload').slideUp('fast', (function() {
+			this.unedit();
+			this.undel();
+			this.visible = false;
+		}).bind(this));
+	}
+}
+
+var patternEditor = {
+	visible: false,
+	state: 'add',
+	currentID: 0,
+	edit: function(pattern) {
+		this.undel();
+		$('#pattern-share').addClass('action-edit');
+		$('#patternedit-id').text(_.trunc(pattern.name, 40));
+		$('#pattern-share .filename').val(pattern.name);
+		if(pattern.associated_loop) {
+			$('#loop-toassoc').val(pattern.associated_loop);
+			$('#assoc_loop')[0].checked = true;
+		}
+		else
+			$('#assoc_loop')[0].checked = false;
+		$('#assoc_loop').trigger('change');
+		if(pattern.style) 
+			$('#cell-style').val(pattern.style).trigger('change');
+		if(pattern.osc) 
+			Grid.setOsc(pattern.osc);
+		
+		this.state = 'edit';
+		this.show(pattern.string);
+		this.currentID = +pattern.id;
+	},
+	unedit: function() {
+		if(this.state !== 'edit') return;
+		this.state = 'add';
+		$('#pattern-share').removeClass('action-edit');
+	},
+	del: function(pattern) {
+		this.currentID = +pattern.id;
+		this.unedit();
+		this.state = 'delete';
+		$('#patterndelete-id').text(_.trunc(pattern.name, 40));
+		$('#pattern-share').addClass('action-delete');
+		this.show(pattern.string);
+	},
+	undel: function() {
+		if(this.state !== 'delete') return;
+		this.state = 'add';
+		$('#pattern-share').removeClass('action-delete');
+
+	},
+	show: function(patternStr) {
+		if(typeof patternStr === 'undefined') patternStr = false;
+		Grid.enterPaintMode();
+		if(patternStr) {
+			Grid.build(patternStr);
+			$('#pattern-library').removeClass('open-lib');
+		}
+		if(this.visible) return;
+		$('#pattern-share .captcha').attr('src', 'captcha/captcha.php?color=200,200,200&'+Math.random());
+		$('.onshare-show').slideDown('fast');
+		this.visible = true;
+		$('#pattern-share .validable').trigger('input');
+
+		if($('#osc-sel').val() === 'default')
+			Grid.recount();
+	},
+	hide: function() {
+		if(!this.visible) return;
+		$('.onshare-show').slideUp('fast', (function() {
+			this.unedit();
+			this.undel();
+			this.visible = false;
+		}).bind(this));
+	},
+	toggle: function() {
+		if(this.visible) this.hide();
+		else this.show();
+	}
+}
+
+var upconf = { //TODO: merge with conf
+	auth: false
+}
+
+var validations = {
+	delpass: function(val) {
+		return !!val && (val.length <= upconf.max_delpass_length)
+	},
+	captcha: function(val) {
+		return !!val
+	},
+	filename: function(val) {
+		return !!val && (val.length <= upconf.max_filename_length)
+	}
+}
+
+function validateForm($form, fromInput) {
+	$form.find('button[type=submit]').attr('disabled', !!($form.find('.invalid:visible').length))
+}
 
 var actions = {
 	export: function() {
@@ -375,11 +908,19 @@ var actions = {
 	download: function() {
 		Grid.downloadPattern()
 	},
+	upload_loop: function() {
+		console.log('loop upload')
+	},
 	share_pattern: function() {
-		$('#pattern-share').slideToggle('fast');
-		var shareString = Grid.getPattern()+';'+$('#cell-style').val()+';'+(conf.osc ? drawContext.fillStyle.split('#')[1] : 0)
-		, url = document.location.origin + document.location.pathname +'#'+encodeURIComponent(shareString);
-		$('#share-string').val(url)[0].select();
+		patternEditor.toggle();
+	},
+	select_loop: function(ev) {
+		ev.preventDefault();
+		$('#loop-library').addClass('select-mode open-lib');
+	},
+	select_pattern: function(ev) {
+		ev.preventDefault();
+		$('#pattern-library').addClass('select-mode open-lib');
 	},
 	recount_base_color: function() {
 		Grid.recount();
@@ -387,6 +928,12 @@ var actions = {
 }
 
 var isMouseDown = false;
+
+function setLineHeightAsParentHeight($el) {
+	$el.each(function() {
+		$(this).css({lineHeight: $(this).height()+'px'});
+	})
+}
 
 var Colors = {
 	g: '#35752e', G: '#59c44d',
@@ -417,6 +964,13 @@ var styles = {
 			o: 'background: '+baseColor+'; box-shadow: '+baseColor+' 0px 0px 0px 0px, '+baseColor+' 0px 0px 0px 0px, '+darker+' 0px 0px 0px 0px'
 		}
 	},
+	flashes: function(color) {
+		var baseColor = color.toHexString(), darkenColor = color.darken(10).toHexString(), darker = color.darken(30).toRgbString();
+		return {
+			u: 'background: transparent; box-shadow: none;',
+			o: 'background: '+baseColor+'; box-shadow: '+baseColor+' 0px 0px 0px 0px, '+baseColor+' 0px 0px 0px 0px, '+darker+' 0px 0px 0px 0px'
+		}
+	},
 	flat: function(color) {
 		var baseColor = color.toHexString(), lighten = color.brighten(25).saturate(15).toHexString();
 		return {
@@ -429,28 +983,28 @@ styles.transitional = styles.modern;
 
 var globalCSS = {
 	legacy: "html {\
-    height: 100%; \
-    background: #000; \
-    background: -webkit-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
-    background: -ms-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
-    background: -o-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
-    background: -moz-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
-    background: linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
+	height: 100%; \
+	background: #000; \
+	background: -webkit-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
+	background: -ms-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
+	background: -o-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
+	background: -moz-linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
+	background: linear-gradient(top,#404040,#000 195px,#000 380px,#2B2B2B 418px) no-repeat,#2B2B2B; \
   }\
   body {\
-  	font-family: 'Trebuchet MS',\
-  	Trebuchet, Arial,Helvetica, sans-serif;\
+	font-family: 'Trebuchet MS',\
+	Trebuchet, Arial,Helvetica, sans-serif;\
   }\
   #shadow {\
-  	background: rgba(33, 33, 33, 0.44);\
-    box-shadow: 0 0 53px #212121;\
+	background: rgba(33, 33, 33, 0.44);\
+	box-shadow: 0 0 53px #212121;\
   }",
   transitional: "html {\
-  	background: #212121;\
+	background: #212121;\
   }\
   #shadow {\
-  	background: rgba(33, 33, 33, 0.44);\
-    box-shadow: 0 0 53px #212121;\
+	background: rgba(33, 33, 33, 0.44);\
+	box-shadow: 0 0 53px #212121;\
   }",
   flat: "#nullgrid .cell:not(.void) {border-radius: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);}\
   #nullgrid .cell.under:not(.void) { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2); }"
@@ -462,7 +1016,7 @@ function xBrowserIsMouseDown() {
 // stupid bug workaround
 var isChrome = navigator.userAgent.match(/chrome\/([0-9]+)/i);
 if(isChrome) {
-	chromeVersion = isChrome[1];
+	let chromeVersion = isChrome[1];
 	if(+chromeVersion >= 46)
 	xBrowserIsMouseDown = function() {
 		return $('body:active').length;
@@ -471,34 +1025,42 @@ if(isChrome) {
 
 var animations = {
   legacy: function() {
-    var color = this.style.backgroundColor
-    , darken = tinycolor(color).darken(30).toRgbString();
-    this._tl.to(this, 0.1, {
-      opacity: 1,
-      boxShadow: color+' 0px 0px 2px 2px, '+color+' 0px 0px 10px 10px, '+darken+' 0px 0px 9px 9px',
-    }).to(this, 0.4, {
-      opacity: 0,
-      boxShadow: color+' 0px 0px 0px 0px, '+color+' 0px 0px 0px 0px, '+darken+' 0px 0px 0px 0px',
-    })
+	var color = this.style.backgroundColor
+	, darken = tinycolor(color).darken(30).toRgbString();
+	this._tl.to(this, 0.1, {
+	  opacity: 1,
+	  boxShadow: color+' 0px 0px 2px 2px, '+color+' 0px 0px 10px 10px, '+darken+' 0px 0px 9px 9px',
+	}).to(this, 0.4, {
+	  opacity: 0,
+	  boxShadow: color+' 0px 0px 0px 0px, '+color+' 0px 0px 0px 0px, '+darken+' 0px 0px 0px 0px',
+	})
   },
+ /* flashes: function() {
+		var color = this.style.backgroundColor
+		, darken = tinycolor(color).darken(30).toRgbString();
+		this._tl.to(this, 0.1, {
+		  opacity: 1,
+		  boxShadow: color+' 0px 0px 2px 2px, '+color+' 0px 0px 10px 10px, '+darken+' 0px 0px 9px 9px',
+		}).to(this, 0.4, {
+		  opacity: 0,
+		  boxShadow: color+' 0px 0px 0px 0px, '+color+' 0px 0px 0px 0px, '+darken+' 0px 0px 0px 0px',
+		})
+  },*/
   flat: function() {
-    var color = this.style.backgroundColor;
-    this._tl.to(this, 0.1, {
-      opacity: 1,
-      boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0),' + color + ' 0px 0px 4px 2px',
-    }).to(this, 0.6, {
-      opacity: 0,
-      boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.2),' + color + ' 0px 0px 0px 0px',
-    })
+	var color = this.style.backgroundColor;
+	this._tl.to(this, 0.1, {
+	  opacity: 1,
+	  boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0),' + color + ' 0px 0px 4px 2px',
+	}).to(this, 0.6, {
+	  opacity: 0,
+	  boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.2),' + color + ' 0px 0px 0px 0px',
+	})
   }
 }
-animations.modern = animations.transitional = animations.legacy;
+animations.modern = animations.transitional = animations.flashes = animations.legacy;
 
 var Grid = {
 	init: function(sel) {
-		this.pattern = hashData.pattern || localStorage['customPattern'] || defaultPattern;
-		this.baseStyle = 	hashData.style || localStorage['lastStyle'] || defaultStyle;
-		this.lastOsc = 	hashData.osc || localStorage['lastOsc'] || 'default';
 		this.$el = $(sel);
 		var self = this;
 		this.$el.find('.triangle-group').css({display: 'inline-block'}).hide();
@@ -515,9 +1077,9 @@ var Grid = {
 			this.setOsc(this.lastOsc);
 		this.changeStyle(this.baseStyle, this.pattern);
 	},
-	/*pattern: hashData.pattern || localStorage['customPattern'] || defaultPattern,
-	baseStyle: hashData.style || localStorage['lastStyle'] || defaultStyle,
-	lastOsc: hashData.osc || localStorage['lastOsc'] || 'default',*/
+	pattern: localStorage['customPattern'] || defaultPattern,
+	baseStyle: localStorage['lastStyle'] || defaultStyle,
+	lastOsc: localStorage['lastOsc'] || 'default',
 	revert: function() {
 		$('#osc-sel').val('default');
 		this.changeStyle(this.baseStyle, this.pattern);
@@ -577,8 +1139,9 @@ var Grid = {
 				var blink = function() {
 					this._tl.progress(0)
 				}
-				$cell[0].addEventListener('mouseenter', blink, false);
-				$cell[0].addEventListener('touchstart', blink, false);
+        let passive = detectPassiveEvents.hasSupport ? {passive: true} : false;
+				$cell[0].addEventListener('mouseenter', blink, passive);
+				$cell[0].addEventListener('touchstart', blink, passive);
 				return $cell;
 			}
 		}
@@ -632,12 +1195,13 @@ var Grid = {
 		$('#overlays').empty();
 		$('#controls').fadeOut();
 		$('#editmode').slideDown();
-		$('#nerdmode').slideUp();
+		// $('#nerdmode').slideUp();
+		// toggleAnlzOpts()
 		audio.stop(function() {
 			$('#playSwitcher i').removeClass('i-pause-big').addClass('i-play-big')
 		});
 		$('#cells').on('mousedown mouseenter', '.cell', function(ev) {
-			if(!brush.mode || (ev.type == 'mouseenter' && ! xBrowserIsMouseDown() ) ) return;
+			if(!brush.mode || (ev.type == 'mouseenter' && ! xBrowserIsMouseDown()/*isMouseDown*/ /*$('body:active').length*/ ) ) return;
 			if(brush.mode === 'dropper') {
 				var color = $(this).data('c');
 				$('.swatch').removeClass('selected');
@@ -704,7 +1268,8 @@ var Grid = {
 		var cells = document.querySelectorAll('.cell.'+lc+':not(.void)');
 		if(layer !== 'under') {
 			this.cells = cells; 
-			this.reshuffle();
+			// this.reshuffle();
+			this.intoRows();
 			this.cellCount = this.cells.length;
 			this.trimmingConstant = Math.floor(Math.sqrt(this.cellCount));
 		}
@@ -717,31 +1282,70 @@ var Grid = {
 		
 		// resample layers
 		var selfHeight = this.$el.find('#cells').height(), selfWidth = this.$el.find('#cells').width();
-		$('.wrapper-xh').css({'top': ((selfHeight +  70) - conf.barHeight)+'px'});
+		$('.wrapper-xh').css({'top': ((selfHeight +  conf.topOffset) - conf.barHeight)+'px'});
 		$('#shadow').width(selfWidth + 20);
 		this.height = selfHeight / 20;
 		this.width = selfWidth / 20; // where cell is 20×20
 		var _x = this.width, _y = this.height;
 		$('#sizeIndicator').text(_x+' × '+_y)
 	},
-	reshuffle: function() {
+	/*reshuffle: function() {
 		this.cellsShuffled = _.shuffle(this.cells); 
 	},
 	rareShuffle: function() {
 		this.shuffler.do(this.reshuffle.bind(this))
-	},
+	},*/
 	flash: function(i) {
 		if(i+1 <= this.cellCount)
 			this.cells[i]._tl.progress(0);
 	},
-	fuzzyFlash: function(i) {
+	intoRows: function() {
+		let cellsArranged = []
+		Array.prototype.forEach.call(this.cells, cell => {
+			let [_, y, x] = cell.getAttribute('id').split('_')
+			if (! cellsArranged[y]) {
+				cellsArranged[y] = []
+			}
+			cellsArranged[y][x] = cell
+		})
+		this.cellsArranged = cellsArranged.reverse()
+	},
+	flashXY: function(x, y) {
+		let cellY = this.cellsArranged[y]
+		if (!cellY) return;
+		let cell = cellY[x]
+		if (cell && cell.hasOwnProperty('_tl')) {
+			cell._tl.progress(0)
+		}
+	},
+	flashRow: function(y) {
+		let cellY = this.cellsArranged[y]
+		if (!cellY) return;
+		let i = 0
+		while (i < this.flashDensity) {
+			let cell = cellY[Math.floor(Math.random() * cellY.length)]
+			if (cell && cell.hasOwnProperty('_tl')) {
+				cell._tl.progress(0)
+			}
+			i++
+		}
+	},
+	flashDensity: 1,
+	/*flashRow: function(y) {
+		if (this.cellsArranged[y] && this.cellsArranged[y].length)
+			this.cellsArranged[y].forEach(cell => {
+				if (cell.hasOwnProperty('_tl'))
+					cell._tl.progress(0)
+			})
+	},*/
+	/*fuzzyFlash: function(i) {
 		if(i+1 <= this.cellCount)
 			if(Math.random() > conf.flashFuzziness)
 				this.cells[i]._tl.progress(0);
 			else {
 				this.cellsShuffled[i]._tl.progress(0);
 			}
-	},
+	},*/
 	resample: function(direction, amount, layer) {
 		var pattern = this.getPattern();
 		var lines = pattern.split(/[|\/]/);
@@ -813,9 +1417,9 @@ var Grid = {
 		_.each(lines, function(line, li) {
 			var chars = _.compact(line.split(colorMatch));
 			if(chars.length < width) {
-				var offset = width - chars.length,
-				offsetLeft = Math.floor(offset/2);
-				offsetRight = Math.ceil(offset/2);
+				let offset = width - chars.length
+				, offsetLeft = Math.floor(offset/2)
+				, offsetRight = Math.ceil(offset/2)
 				_.times(offsetLeft, function() {
 					chars.unshift('_');
 				});
@@ -833,14 +1437,20 @@ var Grid = {
 				i++;
 			})
 		});
+		_debug_ = {
+			output: output,
+			width: width,
+			height: height
+		}
 		bufferContext.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height);
-		imageData = bufferContext.createImageData(width, height);
+		let imageData = bufferContext.createImageData(width, height);
 		imageData.data.set(output);
 		bufferContext.putImageData(imageData, 0, 0);
 		return bufferCanvas.toDataURL('image/png');
 	}
 };
 
+var _debug_;
 
 var brush = {
 	mode: false,
@@ -851,6 +1461,111 @@ function _test(N) {
 	for (var i = 0; i < N; i++) {
 		setInterval(function() {Grid.flash(_.random(0, Grid.cellCount-1))}, _.random(400, 3000))
 	};
+}
+
+const ranges = {
+	defaults: {
+		freq: [0, 18000],
+		db: [-120, 0],
+		smoothing: 0.1,
+		treshold: 1.5
+	},
+	current: {},
+	init: function() {
+		this.freq = $("#frequency_range").ionRangeSlider({
+			type: 'double',
+			min: 0, 
+			max: this.sampleRate/2,
+			min_interval: 1000,
+			drag_interval: true,
+			grid_num: 6,
+			values_separator: '...',
+			grid: true,
+			from: this.defaults.freq[0],
+			to: this.defaults.freq[1],
+			onChange: data => {
+				this.current.freq = [data.from, data.to]
+				this.current.numSamples = this.hz2samples(data.to - data.from)
+				this.current.sampleOffset = this.hz2samples(data.from)
+			}
+		}).data('ionRangeSlider')
+		this.db = $("#dynamic_range").ionRangeSlider({
+			type: 'double',
+			min: -200, 
+			max: 0,
+			from: this.defaults.db[0],
+			to: this.defaults.db[1],
+			min_interval: 10,
+			grid_num: 5,
+			values_separator: '...',
+			drag_interval: true,
+			grid: true,
+			onChange: data => {
+				this.current.db = [data.from, data.to]
+				visualizer.analyser.minDecibels = data.from
+				visualizer.analyser.maxDecibels = data.to
+			}
+		}).data('ionRangeSlider')
+		this.smoothing = $('#smoothing').ionRangeSlider({
+			min: 0, 
+			max: 1,
+			step: 0.01,
+			from: this.defaults.smoothing,
+			grid: true,
+			onChange: data => {
+				this.current.smoothing = data.from
+			}
+		}).data('ionRangeSlider')
+		this.treshold = $('#treshold').ionRangeSlider({
+			min: 0.5, 
+			max: 3,
+			step: 0.01,
+			grid_num: 5,
+			from: this.defaults.treshold,
+			grid: true,
+			onChange: data => {
+				this.current.treshold = data.from
+			}
+		}).data('ionRangeSlider')
+		this.sync()
+	},
+	get sampleRate() {
+		try {
+			return audio.context.sampleRate
+		}
+		catch(e) {
+			return 48000
+		}
+	},
+	get fftSize() {
+		try {
+			return visualizer.analyser.fftSize
+		}
+		catch(e) {
+			return conf.fftSize
+		}
+	},
+	hz2samples: function(hz) { return Math.round(hz / (this.sampleRate/this.fftSize)) },
+	samples2hz: function(samples) { return Math.round(samples * (this.sampleRate/this.fftSize))},
+	sync: function(settings = {}) {
+		settings = _.defaults(settings, this.defaults)
+		this.freq.update({
+			max: this.sampleRate/2,
+			from: settings.freq[0],
+			to: settings.freq[1]
+		})
+		this.db.update({
+			from: settings.db[0],
+			to: settings.db[1]
+		})
+		this.smoothing.update({
+			from: settings.smoothing
+		})
+		this.treshold.update({
+			from: settings.treshold
+		})
+		;['freq', 'db', 'smoothing', 'treshold'].forEach(prop => this[prop].callOnChange())
+	}
 }
 
 /* A U D I O */ 
@@ -879,7 +1594,7 @@ audio.stop = function(callback) {
 			if(typeof callback === "function") callback();
 		}});
 		$('.wrapper-decor').fadeOut();
-	}	
+	}   
 	else if(typeof callback === "function") callback();
 }
 
@@ -901,7 +1616,7 @@ audio.loadLoop = function(immed, loop) {
 		audio.context.decodeAudioData(
 			req.response,
 			function(buffer) {
-				conf.tresholdCorrection = +newLoop.treshold_correction || 0;
+				ranges.sync(newLoop)
 				audio.buffer = buffer;
 				audio.source_loop = {};
 				currentLoop  = newLoop;
@@ -916,7 +1631,6 @@ audio.loadLoop = function(immed, loop) {
 		req.responseType = 'arraybuffer';
 		req.send();
 	})
-	
 }
 
 try {
@@ -997,27 +1711,24 @@ return  window.requestAnimationFrame ||
 	};
 })();
 
-var conf = {
-	barWidth: 850,
-	barHeight: 240,
-	smoothing: 0.9,
-	fft_size: 512,
-	treshold: 0.78,
-	tresholdCorrection: 0,
-	domain: 'time',
-	flashProbability: 0.3,
-	flashFuzziness: 0.35,
-	colorAlphaTreshold: 0.5,
-	association: false,
-	osc: true
-};
+function record_mode() {
+  conf.topOffset = 110
+  Grid.recount()
+  injector.inject('recmode', `#grid-wrap {  margin-top: 66px } .player-controls {opacity: 0} .player-controls:hover {opacity: 1}`)
+}
+
+function logIfDown() {
+  if (xBrowserIsMouseDown()) {
+      console.dir.apply(this, arguments)
+  }
+}
 
 function VisualizerSample() {
 	this.analyser = audio.context.createAnalyser();
 
 	this.analyser.connect(audio.context.destination);
-	this.analyser.minDecibels = -100;
-	this.analyser.maxDecibels = 0;
+	/*this.analyser.minDecibels = conf.minDecibels;
+	this.analyser.maxDecibels = 0;*/
 	try {
 		this.analyser.fftSize = conf.fft_size;
 		$('label[for=fft_size] .indicator').removeClass('illegal')
@@ -1025,26 +1736,152 @@ function VisualizerSample() {
 	catch(e) {
 		$('label[for=fft_size] .indicator').addClass('illegal')
 	}
-	this.times = new Uint8Array(this.analyser.frequencyBinCount);
+	this.samples = new Uint8Array(this.analyser.frequencyBinCount);
+}
+const channel = {
+	init: function() {
+		this.canvas = $('#samplecanvas')[0]
+		this.ctx = this.canvas.getContext('2d')
+		this.canvas.width = conf.fft_size / 2
+	},
+	debugOn: false,
+	history: [],
+	current: [],
+	// Main function (input + getJumps). Takes spectrum, returns jumps, draws debug graph
+	tick: function(spectrum) {
+		let numSamples = ranges.current.numSamples
+		, offset = ranges.current.sampleOffset
+		, numBands = Grid.height
+		, bands = []
+		, bandWidths = []
+		, spectrumLength = spectrum.length
+		// Fill
+		for (let i = 0; i < spectrumLength; i++) {
+			if (i >= offset && i < offset + numSamples) { // For all bands in analysis range
+				let n = i - offset, bandNum
+
+				if (this.debugOn) {
+					this.ctx.fillStyle = conf.lightWave
+				}
+
+				// determaine which to which band the sample goes
+				if (conf.distributionLaw === 'quadratic')
+					bandNum = Math.floor(numBands * Math.abs(Math.pow(n/(numSamples), 2)))
+				else if (conf.distributionLaw === 'reverse-quadratic') //do not use (please)
+					bandNum = numBands - Math.floor(numBands * Math.abs(Math.pow((numSamples-n)/(numSamples), 2)))
+				else //linear
+					bandNum = Math.floor(n / (numSamples / numBands))
+
+				if (!bandWidths[bandNum]) {
+					bands[bandNum] = 0;
+					bandWidths[bandNum] = 0;
+				}
+
+				let sample = Math.min(Math.abs(spectrum[i] / 256), 1)
+				// , lastHistoryRecord = _.last(this.history)
+				// , treshold = lastHistoryRecord ? lastHistoryRecord[bandNum] : conf.absoluteTreshold
+
+				if (sample < conf.absoluteTreshold) {
+					sample = 0;
+				}
+
+				bands[bandNum] += sample;
+				bandWidths[bandNum] += 1;
+			}
+			else if(this.debugOn) { // for samples outside analysis range, draw them darker
+				this.ctx.fillStyle = conf.darkWave
+			}
+			if(this.debugOn) { // building sample graph
+				let barHeight = Math.round(100 * (spectrum[i] / 256))
+				if (barHeight)
+					this.ctx.fillRect(i, 100-barHeight, 1, barHeight)
+			}
+		}
+
+		// Normalize
+		for (let i = 0; i < numBands; i++) {
+			if (bandWidths[i] > 0) {
+				bands[i] /= bandWidths[i];
+			} else {
+				bands[i] = 0;
+			}
+		}
+
+		if (this.current) {
+			this.history.push(this.current);
+		}
+
+		while (this.history.length > conf.historySize) {
+			this.history.shift();
+		}
+
+		this.current = bands;
+
+		// ----------- input() function end; getJumps() function begin -----------
+		let average = []
+		, jumps = []
+
+		// Get historical averages for bands
+		for (let i = 0; i < this.history.length; i++) {
+			for (let band = 0; band < numBands; band++) {
+				if (!average[band]) {
+					average[band] = 0;
+				}
+				average[band] += this.history[i][band];
+			}
+		}
+
+		let offsetLeft = offset // reset canvas' x-coordinate counter
+
+		for (let band = 0; band < numBands; band++) {
+			// normalize
+			if (average[band] > 0) {
+				average[band] /= this.history.length;
+			} else {
+				average[band] = 0;
+			}
+
+			if (this.debugOn) {
+				this.ctx.fillStyle = band%2 ? 'green': 'purple'
+				this.ctx.fillRect(offsetLeft, 100, bandWidths[band], 3)
+				this.ctx.fillRect(offsetLeft, 103, bandWidths[band], bands[band]*57)
+			}
+
+			if (this.current[band] > average[band] * ranges.current.treshold) {
+				jumps[band] = 1;
+				// Show jumps on graph
+				if (this.debugOn) {
+					this.ctx.fillStyle = band%2 ? 'lime': 'magenta'
+					this.ctx.fillRect(offsetLeft, 105 + bands[band]*57 - 4, bandWidths[band], 4)
+				}
+			} 
+			else {
+				jumps[band] = 0;
+			}
+
+			if (this.debugOn) {
+				offsetLeft += bandWidths[band]
+			}
+		}
+
+		return jumps
+	}
 }
 
 VisualizerSample.prototype.draw = function() {
-	this.analyser.smoothingTimeConstant = conf.smoothing;
+	this.analyser.smoothingTimeConstant = ranges.current.smoothing;
 
-	if(conf.domain === 'time')
-		this.analyser.getByteTimeDomainData(this.times);
-	else 
-		this.analyser.getByteFrequencyData(this.times);
+	this.analyser.getByteFrequencyData(this.samples);
 
 	if(conf.osc)
 		drawContext.clearRect(0,0,conf.barWidth,conf.barHeight);
 	
 	for (var i = 0; i < this.analyser.frequencyBinCount; i++) {
-		var value = this.times[i];
+		var value = this.samples[i];
 		var percent = value / 256;
 
-		if(percent > (conf.treshold + conf.tresholdCorrection) && Math.random() < conf.flashProbability)
-			Grid.fuzzyFlash(i)
+		/*if(percent > (conf.treshold + conf.tresholdCorrection) && Math.random() < conf.flashProbability)
+			Grid.fuzzyFlash(i)*/
 
 		if(conf.osc) {
 			var height = conf.barHeight * percent;
@@ -1053,10 +1890,24 @@ VisualizerSample.prototype.draw = function() {
 		}
 	}
 
-	Grid.rareShuffle();
+	if (channel.debugOn)
+		channel.ctx.clearRect(0, 0, conf.fft_size, 205)
+
+	/*channel.input(this.samples, ranges.current.numSamples, ranges.current.sampleOffset)
+	let jumps = channel.getJumps()*/
+	let jumps = channel.tick(this.samples)
+	for (let i = 0; i < Grid.height; i++) {
+		if (!jumps[i]) continue;
+		// Grid.flashRow(i)
+		Grid.flashRow(/*Math.floor(Math.random() * Grid.width),*/ i);
+	}
+
+	// Grid.rareShuffle();
 
 	frame(this.draw.bind(this));
 }
+
+
 
 VisualizerSample.prototype.getFrequencyValue = function(freq) {
 	var nyquist = audio.context.sampleRate/2;
@@ -1104,6 +1955,7 @@ function handleFile(evt, type) {
 			return function(e) {
 				var dataUrl = e.target.result;
 				toCanvas(dataUrl);
+				$('#pattern-share .filename').val(f.name.match(/(.+?)\.([a-z0-9_]+$)/i)[1])
 			};
 		})(f);
 
@@ -1112,10 +1964,6 @@ function handleFile(evt, type) {
 
 	else if(f.type.match('audio.*')) {
 		var reader = new FileReader();
-		var $playIcon = $('#playSwitcher i')
-		, classBefore = $playIcon.attr('class');
-		$playIcon.attr('class', 'i-spin');
-		$('#playSwitcher').addClass('spins');
 		
 		reader.onload = (function(theFile) {
 			return function(e) {
@@ -1124,16 +1972,15 @@ function handleFile(evt, type) {
 				//prevent Firefox bug (decoding audio buffer empties it)
 				currentCustomTrack.blob = new Blob([currentCustomTrack.buffer], { type: currentCustomTrack.ftype });
 				currentCustomTrack.name = f.name.match(/(.+?)\.([a-z0-9_]+$)/i)[1];
+				$('#loop-upload .filename').val(currentCustomTrack.name);
+				loopEditor.add();
 				audio.context.decodeAudioData(
 					currentCustomTrack.buffer,
 					function(buffer) {
-						$playIcon.attr('class', classBefore);
-						$('#playSwitcher').removeClass('spins');
+						ranges.sync()
 						audio.stop(function() {
 							audio.buffer = buffer;
 							currentLoop.fileName = currentCustomTrack.name;
-							conf.tresholdCorrection = 0;
-							updateRanges('tresholdCorrection');
 							audio.disabled = false;
 							audio.play();
 						});
@@ -1237,9 +2084,13 @@ function TrackList(tracklist, sel, id, flat, $sortButton, sortBy, order, playEna
 						'<a target="_blank" href="loops/'+sectID+'/'+entry.original_hash+'.mp3" download="'+safeName+'.mp3" class="dlo-dlbutton dlb-mp3"><i class="i-download-menu"></i> MP3</a>\
 						<a target="_blank" href="loops/'+sectID+'/'+entry.original_hash+'.ogg" download="'+safeName+'.ogg" class="dlo-dlbutton dlb-ogg"><i class="i-download-menu"></i> OGG</a>\
 					</div>\
+					<div class="edit-options">\
+						<a href="#" class="dlo-dlbutton dlb-delete"><i class="i-x-small"></i> Удалить</a>\
+						<a href="#" class="dlo-dlbutton dlb-edit"><i class="i-edit"></i> Править</a>\
+					</div>\
 					<div class="track-duration">'+entry.duration+'</div>\
 					<div class="track-options">\
-						<i class="i-download-menu"></i>\
+						<i class="i-download-menu"></i><i class="i-burger'+foradmin+'"></i>\
 					</div>\
 				</div>';
 			}
@@ -1291,6 +2142,15 @@ function TrackList(tracklist, sel, id, flat, $sortButton, sortBy, order, playEna
 				if(seconds.length == 1) seconds = '0'+seconds;
 				entry.duration = minutes+':'+seconds;
 			}
+			['freq', 'db'].forEach(prop => {
+				if (entry[prop] && typeof entry[prop]=='string')
+					entry[prop] = entry[prop].split('~').map(v => +v)
+			})
+			;['smoothing', 'treshold'].forEach(prop => {
+				if (entry[prop] && typeof entry[prop]=='string')
+					entry[prop] = +entry[prop]
+			})
+			
 		})
 	}
 
@@ -1470,7 +2330,9 @@ function PatternGallery(patterns, sel, id, $sortButton, sortBy, order) {
 				<img src="'+src+'" class="pattern-pic'+crisp+'"'+upstyle+' alt="'+safeName+'">\
 				<div class="pattern-name">'+safeName+'</div>\
 				<div class="pattern-options">\
+					<a title="Править" href="#" class="pattern-menu-item pmi-left'+foradmin+'"><i class="i-edit"></i></a>\
 					<a title="Скачать PNG" target="_blank" href="'+src+'" download="'+safeName+'.png" class="pattern-menu-item pmi-mid"><i class="i-download-menu"></i></a>\
+					<a title="Удалить" href="#" class="pattern-menu-item pmi-right'+foradmin+'"><i class="i-x-small"></i></a>\
 				</div>\
 			</div>'
 		}, this)
@@ -1563,3 +2425,23 @@ cheet('↑ ↑ ↓ ↓ ← → ← → b a', function () {
 Math.log2 = Math.log2 || function(x) {
   return Math.log(x) / Math.LN2;
 };
+
+var $stream = null, radioMES = null;
+
+function set_stream(url, mediaType) {
+	if(!$stream) {
+		$('<audio style="display:none" id="stream-victim"></audio>').appendTo('body');
+		$stream = $('#stream-victim');
+	}
+	$stream.html('<source src="'+url+'" type="'+mediaType+'" />');
+}
+
+function connectStream() {
+	radioMES = audio.context.createMediaElementSource($('#stream-victim')[0]);
+	radioMES.connect(gainNode);
+}
+
+function toggleAnlzOpts() {
+	$('#nerdmode').slideToggle('fast')
+	channel.debugOn = !channel.debugOn
+}

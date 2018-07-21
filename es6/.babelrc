@@ -1,0 +1,8 @@
+{
+  "presets": [["env", {"modules": false, "comments": false}]],
+  "env": {
+    "production": {
+      "presets": [["minify", {"mangle": false}]]
+    }
+  }
+}

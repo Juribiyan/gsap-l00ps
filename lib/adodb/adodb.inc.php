@@ -215,7 +215,7 @@ class ADOConnection
 	var $query_list_errors = array();
 	var $_logsql = false;
 
-	function ADOConnection()
+	function __construct()
 	{
 	}
 

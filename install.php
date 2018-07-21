@@ -1,4 +1,4 @@
-<?
+<?php
 require 'common_config.php';
 
 if(!strlen(MASTER_PASS) || !strlen(SALT)) 
@@ -19,10 +19,10 @@ if(!isset($_POST['proceed'])) {
   $ogg_i = escapeshellarg('install/media/test.ogg');
   $mp3_o = escapeshellarg('install/media/test_o.mp3');
   $ogg_o = escapeshellarg('install/media/test_o.ogg');
-  $x=1; exec('ffmpeg -y -i '.$ogg_i.' -loglevel error -q:a '.MP3_Q.' '.$mp3_o.' 2>&1', $mp3_enc_err, $x);
+  exec('ffmpeg -y -i '.$ogg_i.' -loglevel error -q:a '.MP3_Q.' '.$mp3_o.' 2>&1', $mp3_enc_err, $x);
   if($x !== 0 || !empty($mp3_enc_err))
     retreat('FFMpeg выдал ошибку при кодировании из OGG в MP3');
-  $x=1; exec('ffmpeg -y -i '.$mp3_i.' -loglevel error -q:a '.OGG_Q.' '.$ogg_o.' 2>&1', $ogg_enc_err, $x);
+  exec('ffmpeg -y -i '.$mp3_i.' -loglevel error -q:a '.OGG_Q.' '.$ogg_o.' 2>&1', $ogg_enc_err, $x);
   if($x !== 0 || !empty($ogg_enc_err))
     retreat('FFMpeg выдал ошибку при кодировании из MP3 в OGG');
   unlink('install/media/test_o.mp3');
@@ -71,9 +71,7 @@ function install_sql($f) {
   $sql_file = fopen($f, 'r');
   $data = fread($sql_file, filesize($f));
 
-  $data = str_replace('__LOOPDB__', LOOPS_DBNAME, $data);
-  $data = str_replace('__PATTDB__', PATTERNS_DBNAME, $data);
-  $data = str_replace('__MASTERPASS__', $masterpass, $data);
+  $data = str_replace(array('KU_DBCHARSET', 'KU_COLLATION', '__LOOPDB__', '__PATTDB__', '__MASTERPASS__'), array(KU_DBCHARSET, KU_COLLATION, KU_DBPREFIX.LOOPS_DBNAME, KU_DBPREFIX.PATTERNS_DBNAME, hash('sha256', MASTER_PASS.SALT)), $data);
 
   $result = $tc_db->Execute($data);
 
@@ -108,7 +106,7 @@ function update_loops_json_file($section) {
 
   $sect_condition = ($section == 'custom') ? "`section`='custom'" : "`section`='dead' OR `section`='live'";
   $json_filename = ($section == 'custom') ? 'custom_loops.json' : 'default_loops.json';
-  $alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `treshold_correction`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
+  $alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
   $tracklist = fopen($json_filename, 'w');
   fwrite($tracklist, json_encode($alltracks));
   fclose($tracklist);

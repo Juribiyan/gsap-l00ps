@@ -158,10 +158,10 @@ function generate_code($length = 7) {
 		foreach($charset as $char) {
 			$balanced = $freqs[$char] / $sum;
 			$bsum += $balanced;
-			$xfq[(string)$bsum] = $char;
+			$xfq[$char] = $bsum;
 		}
 		$roll = frand();
-		foreach($xfq as $freq => $letter) {
+		foreach($xfq as $letter => $freq) {
 			if($roll < $freq) {
 				$result[$i] = $letter;
 				$roll = 2;

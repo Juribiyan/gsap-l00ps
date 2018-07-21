@@ -15,7 +15,7 @@ class postgres7_driver_ADOConnection extends ADOConnection
 	var $sysTimeStamp = "CURRENT_TIMESTAMP";
 	var $pg_escape_enable = false;
 
-	function postgres7_driver_ADOConnection()
+	function __construct()
 	{
 		$this->dbtype = 'postgres7';
 		$this->dataProvider = 'postgres';
@@ -434,7 +434,7 @@ class postgres7_driver_ResultSet
 	* @param string $resultId
 	*/
 
-	function postgres7_driver_ResultSet( $resultId, $connectionId )
+	function __construct( $resultId, $connectionId )
 	{
 		$this->fields = array();
 		$this->connectionId = $connectionId;

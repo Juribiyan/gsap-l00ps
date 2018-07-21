@@ -1,0 +1,15 @@
+{
+  "name": "gsap-l00ps",
+  "version": "0.0.1",
+  "description": "0chan loops in javascript",
+  "scripts": {
+    "build": "cross-env BABEL_ENV=production babel src --out-dir ../ --source-maps"
+  },
+  "author": "Juribiyan",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-minify": "^0.4.1",
+    "cross-env": "^5.1.5"
+  }
+}

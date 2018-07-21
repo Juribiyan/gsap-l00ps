@@ -13,7 +13,7 @@ class sqlite_driver_ADOConnection extends ADOConnection
 	var $sysDate = "date('Y-m-d')";
 	var $sysTimeStamp = "date('Y-m-d H:i:s')";
 
-	function sqlite_driver_ADOConnection()
+	function __construct()
 	{
 		$this->dbtype = 'sqlite';
 		$this->dataProvider = 'sqlite';
@@ -385,7 +385,7 @@ class sqlite_driver_ResultSet
 	* @param string $resultId
 	*/
 
-	function sqlite_driver_ResultSet( $resultId, $connectionId )
+	function __construct( $resultId, $connectionId )
 	{
 		$this->fields = array();
 		$this->connectionId = $connectionId;
