@@ -250,7 +250,6 @@ function loop_probe() {
 	$x=1;  exec('ffprobe -v quiet -i '.$loop4shell.' -print_format json -show_format 2>&1', $probe, $x);
 	if($x != 0)
 		retreat('transcode_error', 'FFMprobe выдал ошибку при зондировании файла');
-	var_dump($probe);
 	$result = json_decode(implode('', $probe), true);
 	if(!$result)
 		retreat('transcode_error', 'FFProbe не может обработать файл.');
