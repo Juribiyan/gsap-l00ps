@@ -6,9 +6,9 @@ require 'common_config.php';
 // pass configuration to client
 if(isset($_GET['check'])) {
 	exit(json_encode(array(
-		max_loop_fszkb => MAX_LOOP_FSZKB,
-		max_filename_length => NAME_TRUNC,
-		max_delpass_length => DELPASS_TRUNC
+		"max_loop_fszkb" => MAX_LOOP_FSZKB,
+		"max_filename_length" => NAME_TRUNC,
+		"max_delpass_length" => DELPASS_TRUNC
 	)));
 }
 
@@ -219,22 +219,22 @@ if($_POST['action'] == "add" && $_POST['datatype'] == 'loop') {
 	if(!$date)
 		$date = $tc_db->GetOne('SELECT `date` FROM `'.LOOPS_DBNAME.'` WHERE `id`=?', array($id));
 	$ret = array(
-		error => false,
-		success => 'loop_add',
-		warning => $warning ? $warning : null,
-		loop => array(
-			name => $name,
-			original_hash => $original_hash,
-			section => $section,
-			duration => $fileinfo["duration"],
-			date => $date,
-			freq => $freq,
-			db => $db,
-			smoothing => $smoothing,
-			treshold => $treshold,
-			associated_pattern => $associated_pattern,
-			swf => $swf ? $swf : null,
-			id => $id
+		"error" => false,
+		"success" => 'loop_add',
+		"warning" => $warning ? $warning : null,
+		"loop" => array(
+			"name" => $name,
+			"original_hash" => $original_hash,
+			"section" => $section,
+			"duration" => $fileinfo["duration"],
+			"date" => $date,
+			"freq" => $freq,
+			"db" => $db,
+			"smoothing" => $smoothing,
+			"treshold" => $treshold,
+			"associated_pattern" => $associated_pattern,
+			"swf" => $swf ? $swf : null,
+			"id" => $id
 		)
 	);
 
@@ -299,9 +299,9 @@ function loop_probe() {
 				retreat('transcode_error', 'Ошибка при сохранении файла '.$original_hash.'.'.$format['format_name']);
 		}
 		return array(
-			mp3_hash => $mp3_hash,
-			ogg_hash => $ogg_hash,
-			duration => $duration
+			"mp3_hash" => $mp3_hash,
+			"ogg_hash" => $ogg_hash,
+			"duration" => $duration
 		);
 	}
 }
@@ -417,12 +417,12 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'loop') {
 				$loop_toreflect['section_from'] = $section_move;
 			
 			$ret = array(
-				error => false,
-				success => 'loop_edit',
-				name => $name,
-				changes => $changes,
-				warning => $warning,
-				loop => $loop_toreflect
+				"error" => false,
+				"success" => 'loop_edit',
+				"name" => $name,
+				"changes" => $changes,
+				"warning" => $warning,
+				"loop" => $loop_toreflect
 			);
 
 			/* update tracklist JSON */
@@ -458,11 +458,11 @@ if($_POST['action'] == "delete" && $_POST['datatype'] == 'loop') {
 	if($tc_db->Affected_Rows() < 1)
 		retreat('mysql_error', 'Ошибка при удалении записи из базы данных');
 	$ret = array(
-		error => false,
-		success => 'loop_delete',
-		loop => array(
-			section => $section,
-			original_hash => $ohash
+		"error" => false,
+		"success" => 'loop_delete',
+		"loop" => array(
+			"section" => $section,
+			"original_hash" => $ohash
 		)
 	);
 
@@ -580,20 +580,20 @@ if($_POST['action'] == "add" && $_POST['datatype'] == 'pattern') {
 		$date = $tc_db->GetOne('SELECT `date` FROM `'.PATTERNS_DBNAME.'` WHERE `id`=?', array($id));
 
 	$ret = array(
-		error => false,
-		success => 'pattern_add',
-		pattern => array(
-			name => $name,
-			'string' => $pattern['pattern'],
-			width => $pattern['width'],
-			height => $pattern['height'],
-			section => $section,
-			date => $date,
-			id => $id,
-			osc => $osc,
-			style => $style
+		"error" => false,
+		"success" => 'pattern_add',
+		"pattern" => array(
+			"name" => $name,
+			"string" => $pattern['pattern'],
+			"width" => $pattern['width'],
+			"height" => $pattern['height'],
+			"section" => $section,
+			"date" => $date,
+			"id" => $id,
+			"osc" => $osc,
+			"style" => $style
 		),		
-		warning => $warning
+		"warning" => $warning
 	);
 
 	/* update tracklist JSON */
@@ -711,11 +711,11 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'pattern') {
 				$pattern_toreflect['section_from'] = $section_move;
 
 			$ret = array(
-				error => false,
-				success => 'pattern_edit',
-				changes => $changes,
-				warning => $warning,
-				pattern => $pattern_toreflect
+				"error" => false,
+				"success" => 'pattern_edit',
+				"changes" => $changes,
+				"warning" => $warning,
+				"pattern" => $pattern_toreflect
 			);
 
 			/* update gallery JSON */
@@ -750,11 +750,11 @@ if($_POST['action'] == "delete" && $_POST['datatype'] == 'pattern') {
 	if($tc_db->Affected_Rows() < 1)
 		retreat('mysql_error', 'Ошибка при удалении записи из базы данных');
 	$ret = array(
-		error => false,
-		success => 'pattern_delete',
-		pattern => array(
-			section => $section,
-			id => $id
+		"error" => false,
+		"success" => 'pattern_delete',
+		"pattern" => array(
+			"section" => $section,
+			"id" => $id
 		)
 	);
 
@@ -764,7 +764,7 @@ if($_POST['action'] == "delete" && $_POST['datatype'] == 'pattern') {
 }
 
 function retreat($errtype, $msg, $extra_data="") {
-	$ret = array(error=>true, msg=>$msg, errtype=>$errtype);
+	$ret = array("error"=>true, "msg"=>$msg, "errtype"=>$errtype);
 	if($extra_data) $ret["extra_data"] = $extra_data;
 	exit(json_encode($ret));
 }
@@ -834,8 +834,8 @@ function pattern_probe($str) {
       $width = $line_width;
   }
   return array(
-    width => $width,
-    height => $height,
-    pattern => $str
+    "width" => $width,
+    "height" => $height,
+    "pattern" => $str
   );
 }
