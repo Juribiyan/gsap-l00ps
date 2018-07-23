@@ -3,9 +3,9 @@ $_GLOBALS['skipdb'] = true;
 define("img_dir", dirname ( __FILE__ )."/");
 require '../common_config.php';
 if(CONFIG_ENVIRONMENT == 'instant')
-  require __DIR__.'/../config.php';
+  require '../config.php';
 else
-  require 'standalone_config.php';
+  require '../standalone_config.php';
 include 'nrand.php';
 
 $langs = array("ru", "en", "num");
