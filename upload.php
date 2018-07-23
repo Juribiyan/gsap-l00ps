@@ -177,7 +177,7 @@ if($_POST['action'] == "add" && $_POST['datatype'] == 'loop') {
 		'smoothing',
 		'treshold'
 	);
-	$qms = '';
+	$qms = array();
 	$values = array(
 		$section,
 		$name,
