@@ -33,6 +33,8 @@ function install_sql($f) {
       }
     }
   }
+  update_loops_json_file('default');
+  update_loops_json_file('custom');
 }
 
 function message($msg, $type="normal") {
@@ -41,4 +43,15 @@ function message($msg, $type="normal") {
 function retreat($msg) {
   message($msg, 'error');
   die();
+}
+
+function update_loops_json_file($section) {
+  global $tc_db;
+
+  $sect_condition = ($section == 'custom') ? "`section`='custom'" : "`section`='dead' OR `section`='live'";
+  $json_filename = ($section == 'custom') ? 'custom_loops.json' : 'default_loops.json';
+  $alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
+  $tracklist = fopen($json_filename, 'w');
+  fwrite($tracklist, json_encode($alltracks));
+  fclose($tracklist);
 }
