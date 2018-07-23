@@ -50,7 +50,7 @@ function update_loops_json_file($section) {
 
   $sect_condition = ($section == 'custom') ? "`section`='custom'" : "`section`='dead' OR `section`='live'";
   $json_filename = ($section == 'custom') ? 'custom_loops.json' : 'default_loops.json';
-  $alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
+  $alltracks = $tc_db->GetAll("SELECT `section`, `name`, `original_hash`, `date`, `duration`, `freq`, `db`, `treshold`, `smoothing`, `swf`, `id`,`associated_pattern` FROM `".KU_DBPREFIX.LOOPS_DBNAME."` WHERE ".$sect_condition." ORDER BY `id` ASC");
   $tracklist = fopen($json_filename, 'w');
   fwrite($tracklist, json_encode($alltracks));
   fclose($tracklist);
