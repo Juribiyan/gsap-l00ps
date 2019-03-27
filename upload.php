@@ -33,7 +33,8 @@ if(empty($_POST['delpass']))
 /* ============== Check analyzer settings ============== */
 // Frequency range
 $freq = explode(',', $_POST['freq']);
-if (
+if ($_POST['datatype'] == 'loop' &&
+(
 	!((int)($freq[0]) || $freq[0]=='0')
 	||
 	!((int)($freq[1]) || $freq[1]=='0')
@@ -43,10 +44,11 @@ if (
 	$freq[0] < 0
 	||
 	$freq[1] > 24000
-) retreat('bad_freq', 'Неверно задан частотный диапазон.');
+)) retreat('bad_freq', 'Неверно задан частотный диапазон.');
 // Dynamic range
 $db = explode(',', $_POST['db']);
-if (
+if ($_POST['datatype'] == 'loop' &&
+(
 	!((int)($db[0]) || $db[0]=='0')
 	||
 	!((int)($db[1]) || $db[1]=='0')
@@ -56,25 +58,27 @@ if (
 	$db[0] < -200
 	||
 	$db[1] > 0
-) retreat('bad_db', 'Неверно задан динамический диапазон.');
+)) retreat('bad_db', 'Неверно задан динамический диапазон.');
 // Smoothing
 $smoothing = $_POST['smoothing'];
-if (
+if ($_POST['datatype'] == 'loop' &&
+(
 	!((float)$smoothing || $smoothing=='0')
 	||
 	$smoothing > 1
 	||
 	$smoothing < 0
-) retreat('bad_smoothing', 'Неверно задано сглаживание.');
+)) retreat('bad_smoothing', 'Неверно задано сглаживание.');
 // Treshold
 $treshold = $_POST['treshold'];
-if (
+if (($_POST['datatype'] == 'loop' &&
+(
 	!(float)$treshold
 	||
 	$treshold > 3
 	||
 	$treshold < 0.5
-) retreat('bad_treshold', 'Неверно задан порог.');
+)) retreat('bad_treshold', 'Неверно задан порог.');
 
 /* Check captcha */
 if(!isset($_POST['captcha']))
