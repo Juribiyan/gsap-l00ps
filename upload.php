@@ -71,14 +71,17 @@ if ($_POST['datatype'] == 'loop' &&
 )) retreat('bad_smoothing', 'Неверно задано сглаживание.');
 // Treshold
 $treshold = $_POST['treshold'];
-if (($_POST['datatype'] == 'loop' &&
-(
-	!(float)$treshold
-	||
-	$treshold > 3
-	||
-	$treshold < 0.5
-)) retreat('bad_treshold', 'Неверно задан порог.');
+if (
+	$_POST['datatype'] == 'loop' 
+	&&
+	(
+		!(float)$treshold
+		||
+		$treshold > 3
+		||
+		$treshold < 0.5
+	)
+) retreat('bad_treshold', 'Неверно задан порог.');
 
 /* Check captcha */
 if(!isset($_POST['captcha']))
