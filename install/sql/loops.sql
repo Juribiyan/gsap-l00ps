@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS `__LOOPDB__` (
   `treshold` float NOT NULL DEFAULT '1.5',
   `smoothing` float NOT NULL DEFAULT '0.1',
   `section` varchar(10) NOT NULL,
-  `swf` varchar(50) NOT NULL,
-  `associated_pattern` int(10) unsigned NOT NULL,
+  `swf` varchar(50) NULL DEFAULT NULL,
+  `associated_pattern` int(10) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=KU_DBCHARSET COLLATE=KU_COLLATION;
