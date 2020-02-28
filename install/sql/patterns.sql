@@ -5,10 +5,10 @@ CREATE TABLE IF NOT EXISTS `__PATTDB__` (
   `width` tinyint(3) unsigned NOT NULL,
   `height` tinyint(3) unsigned NOT NULL,
   `section` varchar(10) NOT NULL,
-  `associated_loop` varchar(100) NOT NULL,
+  `associated_loop` varchar(100) NULL DEFAULT NULL,
   `delpass` char(64) NOT NULL,
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `style` varchar(20) NOT NULL,
-  `osc` varchar(6) NOT NULL,
+  `osc` varchar(6) NOT NULL DEFAULT 'off',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=KU_DBCHARSET COLLATE=KU_COLLATION;
