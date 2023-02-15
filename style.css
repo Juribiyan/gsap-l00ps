@@ -304,8 +304,7 @@ canvas {
   width: 100%;
 }
 .panel-delete {
-  display: block;
-  display: block;
+  display: block!important;
   text-align: center;
   font-size: 1.2em;
 }
