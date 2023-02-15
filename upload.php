@@ -31,56 +31,58 @@ if(empty($_POST['delpass']))
 
 /* ============== Check analyzer settings ============== */
 // Frequency range
-$freq = explode(',', $_POST['freq']);
-if ($_POST['datatype'] == 'loop' &&
-(
-	!((int)($freq[0]) || $freq[0]=='0')
-	||
-	!((int)($freq[1]) || $freq[1]=='0')
-	||
-	$freq[1] <= $freq[0]
-	||
-	$freq[0] < 0
-	||
-	$freq[1] > 24000
-)) retreat('bad_freq', 'Неверно задан частотный диапазон.');
-// Dynamic range
-$db = explode(',', $_POST['db']);
-if ($_POST['datatype'] == 'loop' &&
-(
-	!((int)($db[0]) || $db[0]=='0')
-	||
-	!((int)($db[1]) || $db[1]=='0')
-	||
-	$db[1] <= $db[0]
-	||
-	$db[0] < -200
-	||
-	$db[1] > 0
-)) retreat('bad_db', 'Неверно задан динамический диапазон.');
-// Smoothing
-$smoothing = $_POST['smoothing'];
-if ($_POST['datatype'] == 'loop' &&
-(
-	!((float)$smoothing || $smoothing=='0')
-	||
-	$smoothing > 1
-	||
-	$smoothing < 0
-)) retreat('bad_smoothing', 'Неверно задано сглаживание.');
-// Treshold
-$treshold = $_POST['treshold'];
-if (
-	$_POST['datatype'] == 'loop' 
-	&&
+if (@$_POST['action'] != "delete") {
+	$freq = @explode(',', $_POST['freq']);
+	if ($_POST['datatype'] == 'loop' &&
 	(
-		!(float)$treshold
+		!((int)($freq[0]) || $freq[0]=='0')
 		||
-		$treshold > 3
+		!((int)($freq[1]) || $freq[1]=='0')
 		||
-		$treshold < 0.5
-	)
-) retreat('bad_treshold', 'Неверно задан порог.');
+		$freq[1] <= $freq[0]
+		||
+		$freq[0] < 0
+		||
+		$freq[1] > 24000
+	)) retreat('bad_freq', 'Неверно задан частотный диапазон.');
+	// Dynamic range
+	$db = @explode(',', $_POST['db']);
+	if ($_POST['datatype'] == 'loop' &&
+	(
+		!((int)($db[0]) || $db[0]=='0')
+		||
+		!((int)($db[1]) || $db[1]=='0')
+		||
+		$db[1] <= $db[0]
+		||
+		$db[0] < -200
+		||
+		$db[1] > 0
+	)) retreat('bad_db', 'Неверно задан динамический диапазон.');
+	// Smoothing
+	$smoothing = @$_POST['smoothing'];
+	if ($_POST['datatype'] == 'loop' &&
+	(
+		!((float)$smoothing || $smoothing=='0')
+		||
+		$smoothing > 1
+		||
+		$smoothing < 0
+	)) retreat('bad_smoothing', 'Неверно задано сглаживание.');
+	// Treshold
+	$treshold = @$_POST['treshold'];
+	if (
+		$_POST['datatype'] == 'loop' 
+		&&
+		(
+			!(float)$treshold
+			||
+			$treshold > 3
+			||
+			$treshold < 0.5
+		)
+	) retreat('bad_treshold', 'Неверно задан порог.');
+}
 
 /* Check captcha */
 if(!isset($_POST['captcha']))
@@ -120,8 +122,8 @@ mb_internal_encoding("UTF-8");
 
 
 /* Truncate long strings */
-$name = mb_substr($_POST['name'], 0, NAME_TRUNC);
-if($name != $_POST['name'])
+$name = @mb_substr($_POST['name'], 0, NAME_TRUNC);
+if($name && $name != $_POST['name'])
 	$warning .= 'Имя файла было укорочено. ';
 
 /* ADD LOOP */
