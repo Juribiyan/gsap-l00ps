@@ -18,7 +18,6 @@ if(empty($_POST['action']) || empty($_POST['datatype']) || !in_array($_POST['act
 $warning = '';
 
 $section = $_POST['section'];
-$pass = $_POST['delpass'];
 $date = $_POST['date'];
 $swf = $_POST['swf'];
 
@@ -89,11 +88,10 @@ if(!isset($_POST['captcha']))
 if(!CheckCaptcha($_POST['captcha']))
 	retreat('whrong_captcha', "Капча введена неверно");
 
-
-$masterpass = hash('sha256', MASTER_PASS.SALT);
+$masterhash = MASTER_HASH;
 $pass = hash('sha256', $_POST['delpass'].SALT);
 
-if($pass == $masterpass && $_POST['is_admin']) 
+if($pass == MASTER_HASH && $_POST['is_admin']) 
 	$is_admin = true;
 else {
 	if(in_array($_POST['section'], array('dead', 'live', 'default')))
@@ -326,7 +324,7 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'loop') {
 		// take ownership
 		if($is_admin && $loop_toedit['delpass'] != $pass && $_POST['take_ownership']) {
 			$keys []= 'delpass';
-			$values [] = $masterpass;
+			$values [] = MASTER_HASH;
 			$changes []= 'Луп взят под контроль администратора';
 		}
 		if($loop_toedit['name'] != $name) {
@@ -685,7 +683,7 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'pattern') {
     	}
     	if($pattern_toedit['delpass'] != $pass && $_POST['take_ownership']) {
     	  $keys []= 'delpass';
-    	  $values []= $masterpass;
+    	  $values []= MASTER_HASH;
     	  $changes []= 'Паттерн взят под контроль администратора';
     	}
     	if($date && $pattern_toedit['date'] != $date) {

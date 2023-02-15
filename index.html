@@ -18,7 +18,12 @@
   <script src="lib/ion.rangeSlider-2.1.7/js/ion-rangeSlider/ion.rangeSlider.min.js"></script>
 	<script src="lib/cheet.min.js"></script>
 	<script src="lib/malihu-custom-scrollbar-plugin-master/jquery.mCustomScrollbar.concat.min.js?v=3.0.9"></script>
-	<script src="loops.js"></script>
+	<!-- For production: -->
+ 	<script src="es6/src/loops.js"></script>
+
+ 	<!-- For development: -->
+ 	<!-- <script>var html = function(b){for(var c="",d=0;d<b.length;d++)c+=b[d],d<(1>=arguments.length?0:arguments.length-1)&&(c+=a(""+(1>d+1||arguments.length<=d+1?void 0:arguments[d+1])));return c}</script> -->
+ 	<!-- <script src="babel/src/loops.js"></script> -->
 </head>
 <body>
 	<div class="wrapper wrapper-decor wrapper-xh onoscdisable-hide" id="bars-wrap">
