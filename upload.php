@@ -391,7 +391,7 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'loop') {
 			$changes []= 'Установлена ссылка на SWF: "'.$swf.'"';
 		}
 
-		if(count($keys)) {
+		if(@$keys && count($keys)) {
 			foreach($keys as &$key) {
 				$key = '`'.$key.'`=?';
 			}
@@ -697,7 +697,7 @@ if($_POST['action'] == "edit" && $_POST['datatype'] == 'pattern') {
     else $section = $pattern_toedit['section'];
 
 
-    if(count($keys)) {
+    if(@$keys && count($keys)) {
 			foreach($keys as &$key) {
 				$key = '`'.$key.'`=?';
 			}
