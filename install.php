@@ -1,19 +1,19 @@
 <?php
 require 'common_config.php';
 
-if(!strlen(MASTER_PASS) || !strlen(SALT)) 
+if(!strlen(MASTER_HASH) || !strlen(SALT)) 
   retreat('Установите значения MASTER_PASS и SALT в common_config.php');
-$masterpass = hash('sha256', MASTER_PASS.SALT);
 
 if(CONFIG_ENVIRONMENT == 'instant')
   require __DIR__.'/../config.php';
 else
   require 'standalone_config.php';
+
 $tc_db->SetFetchMode(ADODB_FETCH_ASSOC);
 putenv('PATH=' . getenv('PATH') . PATH_SEPARATOR . KU_FFMPEGPATH);
 mb_internal_encoding("UTF-8");
 
-if(!isset($_POST['proceed'])) {
+if(!@$_POST['proceed']) {
   // test ffmpeg
   $mp3_i = escapeshellarg('install/media/test.mp3');
   $ogg_i = escapeshellarg('install/media/test.ogg');
@@ -44,7 +44,7 @@ makeDir('loops/live');
 makeDir('loops/dead');
 makeDir('loops/custom');
 
-if($_POST['install_type'] != 'bare') {
+if(@$_POST['install_type'] != 'bare') {
   message('Устанавливаем базовый контент...');
 
   install_sql('install/sql/default_loops.sql');
@@ -54,7 +54,7 @@ if($_POST['install_type'] != 'bare') {
   xcopy('install/media/live', 'loops/live');
 }
 
-if($_POST['install_type'] == 'extra') {
+if(@$_POST['install_type'] == 'extra') {
   message('Устанавливаем екстра контент...');
 
   install_sql('install/sql/extra_loops.sql');
@@ -71,7 +71,7 @@ function install_sql($f) {
   $sql_file = fopen($f, 'r');
   $data = fread($sql_file, filesize($f));
 
-  $data = str_replace(array('KU_DBCHARSET', 'KU_COLLATION', '__LOOPDB__', '__PATTDB__', '__MASTERPASS__'), array(KU_DBCHARSET, KU_COLLATION, KU_DBPREFIX.LOOPS_DBNAME, KU_DBPREFIX.PATTERNS_DBNAME, hash('sha256', MASTER_PASS.SALT)), $data);
+  $data = str_replace(array('KU_DBCHARSET', 'KU_COLLATION', '__LOOPDB__', '__PATTDB__', '__MASTERPASS__'), array(KU_DBCHARSET, KU_COLLATION, KU_DBPREFIX.LOOPS_DBNAME, KU_DBPREFIX.PATTERNS_DBNAME, MASTER_HASH), $data);
 
   $result = $tc_db->Execute($data);
 
