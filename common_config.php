@@ -32,6 +32,15 @@ define('MAX_SIZE', 50); // pattern size constraint
 
 $cell_styles = array('legacy', 'modern', 'transitional', 'flat');
 
+error_reporting(E_ALL ^ E_NOTICE);
+set_error_handler(function(int $errno, string $errstr) {
+  if ((strpos($errstr, 'Undefined array key') === false) && (strpos($errstr, 'Undefined variable') === false)) {
+    return false;
+  } else {
+    return true;
+  }
+}, E_WARNING);
+
 if (isset($_GET['getpasswordhash'])) {
 	echo hash('sha256', $_GET['getpasswordhash'].SALT);
 }
