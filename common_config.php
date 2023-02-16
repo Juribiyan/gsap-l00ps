@@ -8,6 +8,10 @@ if (!headers_sent()) {
 define('CONFIG_ENVIRONMENT', 'standalone'); 	// "standalone" or "instant" (when using with instant-0chan)
 define('INSTANT_CONFIG_PATH', '/../config.php'); // (when environment == instant)
 
+define('SALT', '! fill me !'); // Enter some random characters
+// To get hash go to /common_config.php?getpasswordhash=<your password> (after filling the SALT)
+define('MASTER_HASH', '! fill me also !');
+
 define('MASTER_HASH', '');
 define('SALT', '');						// !! FILL THOSE FIELDS !!
 
@@ -27,3 +31,7 @@ define('DELPASS_TRUNC', 30); // length constraints
 define('MAX_SIZE', 50); // pattern size constraint
 
 $cell_styles = array('legacy', 'modern', 'transitional', 'flat');
+
+if (isset($_GET['getpasswordhash'])) {
+	echo hash('sha256', $_GET['getpasswordhash'].SALT);
+}
