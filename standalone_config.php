@@ -11,8 +11,9 @@ define('KU_DBCHARSET', 'utf8mb4'); // Database charset. utfmb4 is recommended, u
 define('KU_COLLATION', 'utf8mb4_unicode_ci'); // Database collation. Use utf8mb4_unicode_ci, period.
 define('KU_CAPTCHALANG', 'num'); // Default captcha language to be used if no captchalang cookie is present. Supported values: ru, en, num (numeric)
 
-if (!$_GLOBALS['skipdb']) {
-  require 'lib/adodb/adodb.inc.php';
+if (!@$_GLOBALS['skipdb']) {
+  require realpath(dirname(__FILE__)) . '/lib/vendor/autoload.php';
+
   if (!isset($tc_db)) {
     $tc_db = &NewADOConnection(KU_DBTYPE);
     if (KU_DBUSEPERSISTENT) {
