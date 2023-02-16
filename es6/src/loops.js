@@ -2420,6 +2420,7 @@ var is_admin = false;
 cheet('↑ ↑ ↓ ↓ ← → ← → b a', function () {
   $('body').toggleClass('is-admin');
   is_admin = !!!is_admin;
+  console.log('Congratulations!')
 });
 
 Math.log2 = Math.log2 || function(x) {
